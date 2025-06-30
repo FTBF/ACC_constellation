@@ -1,0 +1,15 @@
+# Build directories
+/build*/
+
+# Python virtual environment
+/venv/
+
+# Merge conflict original copies
+*.orig
+
+# Python cache
+__pycache__/
+.mypy_cache/
+.pytest_cache
+
+*~

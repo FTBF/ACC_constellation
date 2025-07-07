@@ -4,7 +4,7 @@ pkg_check_modules(CNSTLN_SAT REQUIRED ConstellationSatellite)
 pkg_check_modules(CNSTLN_EXEC REQUIRED ConstellationExec)
 
 # Create shared library for satellite
-add_library(ACCTransmitterSatellite SHARED "src/ACCTransmitterSatellite.cpp" "src/ACCTransmitterSatelliteGenerator.cpp")
+add_library(ACCTransmitterSatellite SHARED "src/ACCTransmitterSatellite.cpp" "src/ACC.cpp" "src/EthernetInterface.cpp" "src/ACDC.cpp" "src/ACCTransmitterSatelliteGenerator.cpp")
 
 target_include_directories(ACCTransmitterSatellite PRIVATE "include")
 

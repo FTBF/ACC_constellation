@@ -1,5 +1,5 @@
 /**
- * @file
+ * @file 
  * @brief ACC data producer (transmitting satellite)
  *
  */
@@ -20,14 +20,15 @@ class ACCTransmitterSatellite final : public constellation::satellite::Transmitt
 {
 public:
     ACCTransmitterSatellite(std::string_view type, std::string_view name);
-
+    void launching() final;
     void initializing(constellation::config::Configuration& config) final;
     void reconfiguring(const constellation::config::Configuration& partial_config) final;
     void starting(std::string_view run_identifier) final;
     void running(const std::stop_token& stop_token) final;
     void stopping() final;
+    void landing() final;
 
 private:
-
+    ACC acc_;
 
 };

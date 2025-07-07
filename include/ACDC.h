@@ -32,7 +32,7 @@ public:
         void setNEvents(int nEvts) {nEvents_ = nEvts;} 
         void incNEvents() {++nEvents_;} 
 	map<int, vector<unsigned short>> returnData(){return data;} //returns the entire data map | index: channel < samplevector
-	map<string, unsigned short> returnMeta(){return map_meta;} //returns the entire meta map | index: metakey < value 
+	// map<string, unsigned short> returnMeta(){return map_meta;} //returns the entire meta map | index: metakey < value 
 
 	//----------local set functions
 	void setBoardIndex(int bi); // set the board index for the current acdc

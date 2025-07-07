@@ -937,6 +937,7 @@ void ACC::writeErrorLog(string errorMsg)
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
+}
 
 
 /*ID 25: Scan possible high speed link clock phases and select the optimal phase setting*/ 

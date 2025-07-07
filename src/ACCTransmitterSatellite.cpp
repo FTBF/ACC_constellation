@@ -66,7 +66,7 @@ void ACCTransmitterSatellite::reconfiguring(const Configuration& partial_config)
 void ACCTransmitterSatellite::starting(std::string_view run_identifier)
 {
    LOG(INFO) << "Starting run " << run_identifier << " with seed " << to_string(seed_);
-    write new method for data transmission
+    // write new method for data transmission
     writeThread();
     startDAQThread();
     joinDAQThread();

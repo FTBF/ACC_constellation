@@ -33,43 +33,44 @@ using namespace constellation::utils;
 ACCTransmitterSatellite::ACCTransmitterSatellite(std::string_view type, std::string_view name)
     : TransmitterSatellite(type, name)
 { support_reconfigure();
-    acc_.setName(name);
-    acc_.setType(type);
+    // acc_.setName(name);
+    // acc_.setType(type);
 }
 
 void ACCTransmitterSatellite::initializing(Configuration& config)
 {
 
-    // initializeForDataReadout(config, "");
+    acc_.initializeForDataReadout(config, "");
 }
 
 void ACCTransmitterSatellite::launching(){
-submit_status();
-createAcdcs();
-whichAcdcsConnected();
-setHardwareTrigSrc(1, 0xff); 
-toggleCal(1, 0x7FFF, 0xff);
-setPedestals(0x7FFF, 0xff);
-setVddDLL(0x7FFF, 0xff);
+submit_status(getStatus());
+acc_.createAcdcs();
+acc_.whichAcdcsConnected();
+acc_.setHardwareTrigSrc(1, 0xff); 
+acc_.toggleCal(1, 0x7FFF, 0xff);
+// setPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc); 
+acc_.setPedestals(0x7FFF, 0xff, 0xff);
+vector<uint32_t> vdd_dll_vec(5, 0x1f);
+acc_.setVddDLL(vdd_dll_vec, true);
 
 }
 
 void ACCTransmitterSatellite::reconfiguring(const Configuration& partial_config)
 {
 
-    parse_config(config);
-    initializeForDataReadout(partial_config, "");
+    acc_.parseConfig(partial_config);
+    acc_.initializeForDataReadout(partial_config, "");
 
 
 }
 
 void ACCTransmitterSatellite::starting(std::string_view run_identifier)
 {
-   LOG(INFO) << "Starting run " << run_identifier << " with seed " << to_string(seed_);
     // write new method for data transmission
-    writeThread();
-    startDAQThread();
-    joinDAQThread();
+    acc_.writeThread();
+    acc_.startDAQThread();
+    acc_.joinDAQThread();
 
 }
 
@@ -77,7 +78,7 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 {
         while(!stop_token.stop_requested()) {
         // Do work
-        listenForAcdcData();
+        acc_.listenForAcdcData();
         if(stop_token.stop_requested()) {
             // Handle stop request
             break;
@@ -90,8 +91,7 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 
 void ACCTransmitterSatellite::stopping()
 {
-   LOG_IF(WARNING, hwm_reached_ > 0) << "Could not send " << hwm_reached_ << " messages";
-endRun();
+    acc_.endRun();
 
 }
 
@@ -102,6 +102,7 @@ void ACCTransmitterSatellite::landing(std::string_view run_identifier)
 
     
 }
+
 
 // // Logging a message with the given level:
 // LOG(INFO) << Received configuration";

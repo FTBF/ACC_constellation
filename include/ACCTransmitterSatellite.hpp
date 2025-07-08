@@ -15,6 +15,7 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
+#include "ACC.h"
 
 class ACCTransmitterSatellite final : public constellation::satellite::TransmitterSatellite
 {
@@ -26,7 +27,7 @@ public:
     void starting(std::string_view run_identifier) final;
     void running(const std::stop_token& stop_token) final;
     void stopping() final;
-    void landing() final;
+    void landing(std::string_view run_identifier);
 
 private:
     ACC acc_;

@@ -88,7 +88,33 @@ void ACC::parseConfig(const YAML::Node& config)
     }
 }
 
+  void ACC::parseConfig(const toml::table& config)
+{
+    if(config["humanReadableData"]) params_.rawMode = !config["humanReadableData"].as<bool>();
 
+    params_.eventNumber = config["nevents"].value<int>().value_or(0);
+    params_.triggerMode = config["triggerMode"].value<int>().value_or(0);
+
+    params_.boardMask = config["ACDCMask"].value<unsigned int>().value_or(0);
+    
+    if(config["fileLabel"]) params_.label = config["fileLabel"].value<std::string>().value_or("testData");
+
+    if(config["resetACCOnStart"]) params_.reset = config["resetACCOnStart"].value<bool>().value_or(false);
+
+    if(config["accTrigPolarity"]) params_.accTrigPolarity = config["accTrigPolarity"].value<int>().value_or(0);
+
+    if(config["validationStart"])  params_.validationStart = config["validationStart"].value<int>().value_or(0);
+    if(config["validationWindow"]) params_.validationWindow = config["validationWindow"].value<int>().value_or(0);
+
+    if(config["coincidentTrigMask"]) params_.coincidentTrigMask = config["coincidentTrigMask"].value<int>().value_or(0x0f);
+
+    for(int i = 0; i < 8; ++i)
+    {
+        if(config["coincidentTrigDelay_"   + std::to_string(i)]) params_.coincidentTrigDelay[i]   = config["coincidentTrigDelay_"   + std::to_string(i)].value<int>().value_or(0);
+        if(config["coincidentTrigStretch_" + std::to_string(i)]) params_.coincidentTrigStretch[i] = config["coincidentTrigStretch_" + std::to_string(i)].value<int>().value_or(0);
+    }
+
+}
 
 
 /*ID:9 Create ACDC class instances for each connected ACDC board*/
@@ -611,6 +637,12 @@ void ACC::writeThread()
         nEvtsMax_ = std::max_element(acdcs_.begin(), acdcs_.end(), [](const ACDC& a, const ACDC& b){return a.getNEvents() < b.getNEvents();})->getNEvents();
     }
 }
+
+
+// void ACC::transmitData()
+// {};
+
+
 
 /*------------------------------------------------------------------------------------*/
 /*---------------------------Read functions listening for data------------------------*/

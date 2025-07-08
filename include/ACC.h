@@ -10,6 +10,7 @@
 #include <utility>
 #include <memory>
 #include "yaml-cpp/yaml.h"
+#include "tomlplusplus/include/toml++/toml.h"
 
 using namespace std;
 
@@ -37,6 +38,7 @@ public:
 	/*-------------------------Local set functions for board setup------------------------*/
     void parseConfig(const YAML::Node& config);
 
+	void parseConfig(const toml::table& config);
 	/*ID:9 Create ACDC class instances for each connected ACDC board*/
 	int createAcdcs(); 
 

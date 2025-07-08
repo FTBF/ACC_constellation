@@ -45,12 +45,12 @@ void ACCTransmitterSatellite::initializing(constellation::config::Configuration&
 
 void ACCTransmitterSatellite::launching(){
 submit_status(std::string(getStatus()));
-acc_.createAcdcs();
-acc_.whichAcdcsConnected();
-acc_.setHardwareTrigSrc(1, 0xff); 
-acc_.toggleCal(1, 0x7FFF, 0xff);
+// acc_.createAcdcs();
+// acc_.whichAcdcsConnected();
+// acc_.setHardwareTrigSrc(1, 0xff); 
+// acc_.toggleCal(1, 0x7FFF, 0xff);
 // setPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc); 
-acc_.setPedestals(0x7FFF, 0xff, 0xff);
+// acc_.setPedestals(0x7FFF, 0xff, 0xff);
 vector<uint32_t> vdd_dll_vec(5, 0x1f);
 acc_.setVddDLL(vdd_dll_vec, true);
 

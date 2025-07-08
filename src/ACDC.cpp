@@ -43,40 +43,43 @@ void ACDC::setBoardIndex(int bi)
 	boardIndex = bi;
 }
 
-void ACDC::parseConfig(const YAML::Node& config)
+void ACDC::parseConfig(const constellation::config::Configuration& config)
 {
-    if(config["resetACDCOnStart"]) params_.reset = config["resetACDCOnStart"].as<bool>();
-    if(config["pedestals"])
+    if(config.has("resetACDCOnStart")) params_.reset = config.get<bool>("resetACDCOnStart");
+    if(config.has("pedestals"))
     {
-        if(config["pedestals"].IsScalar())
+        params_.pedestals = config.getArray<unsigned int>("pedestals");
+        if(params_.pedestals.size() == 1)
         {
-            params_.pedestals = std::vector<unsigned int>(5, config["pedestals"].as<unsigned int>());
+
+            params_.pedestals = std::vector<unsigned int>(5, config.get<unsigned int>("pedestals"));
         }
-        else if(config["pedestals"].IsSequence())
-        {
-            params_.pedestals = config["pedestals"].as<std::vector<unsigned int>>();
-            if(params_.pedestals.size() != 5)
-            {
-                //acc.writeErrorLog("Incorrect pedestal configuration");
-            }
-        }
+        // else if(config.get<Value>("pedestals").IsSequence())
+        // {
+        //     params_.pedestals = config.get<std::vector<unsigned int>>("pedestals");
+        //     if(params_.pedestals.size() != 5)
+        //     {
+        //         //acc.writeErrorLog("Incorrect pedestal configuration");
+        //     }
+        // }
     }
-    if(config["selfTrigPolarity"]) params_.selfTrigPolarity = config["selfTrigPolarity"].as<int>();
-    if(config["selfTrigThresholds"])
+    if(config.has("selfTrigPolarity")) params_.selfTrigPolarity = config.get<int>("selfTrigPolarity");
+    if(config.has("selfTrigThresholds"))
     {
-        if(config["selfTrigThresholds"].IsScalar())
+        params_.triggerThresholds = config.getArray<unsigned int>("selfTrigThresholds");
+        if(params_.triggerThresholds.size() == 1)
         {
-            params_.triggerThresholds = std::vector<unsigned int>(30, config["selfTrigThresholds"].as<unsigned int>());
+            params_.triggerThresholds = std::vector<unsigned int>(30, config.get<unsigned int>("selfTrigThresholds"));
         }
-        else if(config["selfTrigThresholds"].IsSequence())
-        {
-            params_.triggerThresholds = config["selfTrigThresholds"].as<std::vector<unsigned int>>();
-        }
+        // else if(config.get<Value>("selfTrigThresholds").IsSequence())
+        // {
+        //     params_.triggerThresholds = config.get<std::vector<unsigned int>>("selfTrigThresholds");
+        // }
     }
-    if(config["selfTrigMask"]) params_.selfTrigMask = config["selfTrigMask"].as<std::vector<unsigned int>>();
-    if(config["calibMode"]) params_.calibMode = config["calibMode"].as<bool>();
-    if(config["accBackpressure"]) params_.acc_backpressure = config["accBackpressure"].as<bool>();
-    if(config["dll_vdd"]) params_.dll_vdd = config["dll_vdd"].as<unsigned int>();
+    if(config.has("selfTrigMask")) params_.selfTrigMask = config.get<std::vector<unsigned int>>("selfTrigMask");
+    if(config.has("calibMode")) params_.calibMode = config.get<bool>("calibMode");
+    if(config.has("accBackpressure")) params_.acc_backpressure = config.get<bool>("accBackpressure");
+    if(config.has("dll_vdd")) params_.dll_vdd = config.get<unsigned int>("dll_vdd");
 }
 
 //looks at the last ACDC buffer and organizes

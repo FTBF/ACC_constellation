@@ -126,7 +126,7 @@ int ACC::createAcdcs()
 	if(connectedBoards.size() == 0)
 	{
 		std::cout << "Trying to reset ACDC boards" << std::endl;
-		eth_.send(0x100, 0xFFFF0000);
+		eth_.send(0x100, 0xFFFF00);
 		usleep(10000);
 		connectedBoards = whichAcdcsConnected();
 		if(connectedBoards.size() == 0)

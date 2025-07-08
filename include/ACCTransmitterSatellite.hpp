@@ -15,6 +15,7 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 #include "ACC.h"
 

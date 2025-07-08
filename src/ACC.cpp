@@ -60,7 +60,7 @@ ACC::ConfigParams::ConfigParams() :
 
 /*------------------------------------------------------------------------------------*/
 /*---------------------------Setup functions for ACC/ACDC-----------------------------*/
-
+/** 
 void ACC::parseConfig(const YAML::Node& config)
 {
     if(config["humanReadableData"]) params_.rawMode = !config["humanReadableData"].as<bool>();
@@ -87,31 +87,32 @@ void ACC::parseConfig(const YAML::Node& config)
         if(config["coincidentTrigStretch_" + std::to_string(i)]) params_.coincidentTrigStretch[i] = config["coincidentTrigStretch_" + std::to_string(i)].as<int>();
     }
 }
+    */
 
-  void ACC::parseConfig(const toml::table& config)
+  void ACC::parseConfig(const constellation::config::Configuration& config)
 {
-    if(config["humanReadableData"]) params_.rawMode = !config["humanReadableData"].as<bool>();
+    if(config.has("humanReadableData")) params_.rawMode = !config.get<bool>("humanReadableData");
 
-    params_.eventNumber = config["nevents"].value<int>().value_or(0);
-    params_.triggerMode = config["triggerMode"].value<int>().value_or(0);
+    params_.eventNumber = config.get<int>("nevents");
+    params_.triggerMode = config.get<int>("triggerMode");
 
-    params_.boardMask = config["ACDCMask"].value<unsigned int>().value_or(0);
-    
-    if(config["fileLabel"]) params_.label = config["fileLabel"].value<std::string>().value_or("testData");
+    params_.boardMask = config.get<unsigned int>("ACDCMask");
 
-    if(config["resetACCOnStart"]) params_.reset = config["resetACCOnStart"].value<bool>().value_or(false);
+    if(config.has("fileLabel")) params_.label = config.get<std::string>("fileLabel");
 
-    if(config["accTrigPolarity"]) params_.accTrigPolarity = config["accTrigPolarity"].value<int>().value_or(0);
+    if(config.has("resetACCOnStart")) params_.reset = config.get<bool>("resetACCOnStart");
 
-    if(config["validationStart"])  params_.validationStart = config["validationStart"].value<int>().value_or(0);
-    if(config["validationWindow"]) params_.validationWindow = config["validationWindow"].value<int>().value_or(0);
+    if(config.has("accTrigPolarity")) params_.accTrigPolarity = config.get<int>("accTrigPolarity");
 
-    if(config["coincidentTrigMask"]) params_.coincidentTrigMask = config["coincidentTrigMask"].value<int>().value_or(0x0f);
+    if(config.has("validationStart"))  params_.validationStart = config.get<int>("validationStart");
+    if(config.has("validationWindow")) params_.validationWindow = config.get<int>("validationWindow");
+
+    if(config.has("coincidentTrigMask")) params_.coincidentTrigMask = config.get<int>("coincidentTrigMask");
 
     for(int i = 0; i < 8; ++i)
     {
-        if(config["coincidentTrigDelay_"   + std::to_string(i)]) params_.coincidentTrigDelay[i]   = config["coincidentTrigDelay_"   + std::to_string(i)].value<int>().value_or(0);
-        if(config["coincidentTrigStretch_" + std::to_string(i)]) params_.coincidentTrigStretch[i] = config["coincidentTrigStretch_" + std::to_string(i)].value<int>().value_or(0);
+        if(config.has("coincidentTrigDelay_"   + std::to_string(i))) params_.coincidentTrigDelay[i]   = config.get<int>("coincidentTrigDelay_"   + std::to_string(i));
+        if(config.has("coincidentTrigStretch_" + std::to_string(i))) params_.coincidentTrigStretch[i] = config.get<int>("coincidentTrigStretch_" + std::to_string(i));
     }
 
 }
@@ -192,7 +193,8 @@ std::vector<int> ACC::whichAcdcsConnected()
 }
 
 /*ID 17: Main init function that controls generalk setup as well as trigger settings*/
-int ACC::initializeForDataReadout(const YAML::Node& config, const string& timestamp)
+// int ACC::initializeForDataReadout(const YAML::Node& config, const string& timestamp)
+int ACC::initializeForDataReadout(const constellation::config::Configuration& config, const string& timestamp)
 {
 	unsigned int command;
 	int retval;
@@ -203,9 +205,9 @@ int ACC::initializeForDataReadout(const YAML::Node& config, const string& timest
     parseConfig(config);
 
     //parse ACC specific settings
-    if(config["ACC0"])
+    if(config.has("ACC0"))
     {
-        parseConfig(config["ACC0"]);
+        parseConfig(config.get<constellation::config::Dictionary>("ACC0"));
     }
 
     if(params_.reset) 
@@ -233,9 +235,9 @@ int ACC::initializeForDataReadout(const YAML::Node& config, const string& timest
         acdc.parseConfig(config);
 
         //parse ACDC specific settings
-        if(config["ACDC" + std::to_string(acdc.getBoardIndex())])
+        if(config.has("ACDC" + std::to_string(acdc.getBoardIndex())))
         {
-            acdc.parseConfig(config["ACDC" + std::to_string(acdc.getBoardIndex())]);
+            acdc.parseConfig(config.get<constellation::config::Dictionary>("ACDC" + std::to_string(acdc.getBoardIndex())));
         }
 
         //reset if requested

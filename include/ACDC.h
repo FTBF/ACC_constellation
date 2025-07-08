@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include "yaml-cpp/yaml.h"
+#include "constellation/core/config/Configuration.hpp"
 
 using namespace std;
 
@@ -37,7 +38,7 @@ public:
 	//----------local set functions
 	void setBoardIndex(int bi); // set the board index for the current acdc
 
-    void parseConfig(const YAML::Node& config);
+    void parseConfig(const constellation::config::Configuration& config);
 
 	//----------parse function for data stream 
 	int parseDataFromBuffer(const vector<uint64_t>& buffer); //parses only the psec data component of the ACDC buffer

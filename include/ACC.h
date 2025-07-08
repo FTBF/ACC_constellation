@@ -11,6 +11,8 @@
 #include <memory>
 #include "yaml-cpp/yaml.h"
 #include "tomlplusplus/include/toml++/toml.h"
+#include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 
 using namespace std;
 
@@ -36,9 +38,9 @@ public:
 
 	/*------------------------------------------------------------------------------------*/
 	/*-------------------------Local set functions for board setup------------------------*/
-    void parseConfig(const YAML::Node& config);
+    // void parseConfig(const YAML::Node& config);
 
-	void parseConfig(const toml::table& config);
+	void parseConfig(const constellation::config::Configuration& config);
 	/*ID:9 Create ACDC class instances for each connected ACDC board*/
 	int createAcdcs(); 
 
@@ -61,7 +63,8 @@ public:
 	void enableTransfer(int onoff=0); 
 
 	/*ID 17: Main init function that controls generalk setup as well as trigger settings*/
-    int initializeForDataReadout(const YAML::Node& config, const string& timestamp = "");
+    // int initializeForDataReadout(const YAML::Node& config, const string& timestamp = "");
+	int initializeForDataReadout(const constellation::config::Configuration& config, const std::string& timestamp = "");
 
 	/*ID 18: Tells ACDCs to clear their ram.*/ 	
 	void dumpData(unsigned int boardMask); 

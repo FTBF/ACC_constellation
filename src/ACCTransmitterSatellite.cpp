@@ -37,14 +37,14 @@ ACCTransmitterSatellite::ACCTransmitterSatellite(std::string_view type, std::str
     // acc_.setType(type);
 }
 
-void ACCTransmitterSatellite::initializing(Configuration& config)
+void ACCTransmitterSatellite::initializing(constellation::config::Configuration& config)
 {
 
     acc_.initializeForDataReadout(config, "");
 }
 
 void ACCTransmitterSatellite::launching(){
-submit_status(getStatus());
+submit_status(std::string(getStatus()));
 acc_.createAcdcs();
 acc_.whichAcdcsConnected();
 acc_.setHardwareTrigSrc(1, 0xff); 
@@ -56,7 +56,7 @@ acc_.setVddDLL(vdd_dll_vec, true);
 
 }
 
-void ACCTransmitterSatellite::reconfiguring(const Configuration& partial_config)
+void ACCTransmitterSatellite::reconfiguring(const constellation::config::Configuration& partial_config)
 {
 
     acc_.parseConfig(partial_config);
@@ -68,7 +68,6 @@ void ACCTransmitterSatellite::reconfiguring(const Configuration& partial_config)
 void ACCTransmitterSatellite::starting(std::string_view run_identifier)
 {
     // write new method for data transmission
-    acc_.writeThread();
     acc_.startDAQThread();
     acc_.joinDAQThread();
 

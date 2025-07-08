@@ -60,13 +60,8 @@ ACC::ConfigParams::ConfigParams() :
 
 /*------------------------------------------------------------------------------------*/
 /*---------------------------Setup functions for ACC/ACDC-----------------------------*/
-<<<<<<< HEAD
 /** 
 void ACC::parseConfig(const YAML::Node& config)
-=======
-
-/**void ACC::parseConfig(const YAML::Node& config)
->>>>>>> 55cfd68ae66bc862a144aee82b3c569cb0990e49
 {
     if(config["humanReadableData"]) params_.rawMode = !config["humanReadableData"].as<bool>();
 
@@ -92,11 +87,7 @@ void ACC::parseConfig(const YAML::Node& config)
         if(config["coincidentTrigStretch_" + std::to_string(i)]) params_.coincidentTrigStretch[i] = config["coincidentTrigStretch_" + std::to_string(i)].as<int>();
     }
 }
-<<<<<<< HEAD
-    */
-=======
 */
->>>>>>> 55cfd68ae66bc862a144aee82b3c569cb0990e49
 
   void ACC::parseConfig(const constellation::config::Configuration& config)
 {

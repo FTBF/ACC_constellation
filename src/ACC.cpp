@@ -61,7 +61,7 @@ ACC::ConfigParams::ConfigParams() :
 /*------------------------------------------------------------------------------------*/
 /*---------------------------Setup functions for ACC/ACDC-----------------------------*/
 
-void ACC::parseConfig(const YAML::Node& config)
+/**void ACC::parseConfig(const YAML::Node& config)
 {
     if(config["humanReadableData"]) params_.rawMode = !config["humanReadableData"].as<bool>();
 
@@ -87,6 +87,7 @@ void ACC::parseConfig(const YAML::Node& config)
         if(config["coincidentTrigStretch_" + std::to_string(i)]) params_.coincidentTrigStretch[i] = config["coincidentTrigStretch_" + std::to_string(i)].as<int>();
     }
 }
+*/
 
   void ACC::parseConfig(const toml::table& config)
 {

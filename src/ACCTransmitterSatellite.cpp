@@ -39,11 +39,14 @@ ACCTransmitterSatellite::ACCTransmitterSatellite(std::string_view type, std::str
 
 void ACCTransmitterSatellite::initializing(constellation::config::Configuration& config)
 {
-
+    LOG(INFO)<<"Config"<< run_identifier;
     acc_.initializeForDataReadout(config, "");
+    LOG(INFO)<<"End Config"<< run_identifier;
 }
 
 void ACCTransmitterSatellite::launching(){
+LOG(INFO)<<"Launching"<< run_identifier;
+LOG(INFO)<<"Get Status"<< run_identifier;
 submit_status(std::string(getStatus()));
 // acc_.createAcdcs();
 // acc_.whichAcdcsConnected();
@@ -51,6 +54,7 @@ submit_status(std::string(getStatus()));
 // acc_.toggleCal(1, 0x7FFF, 0xff);
 // setPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc); 
 // acc_.setPedestals(0x7FFF, 0xff, 0xff);
+LOG(INFO)<<"VDD_DLL setting"<< run_identifier;
 vector<uint32_t> vdd_dll_vec(5, 0x1f);
 acc_.setVddDLL(vdd_dll_vec, true);
 
@@ -58,8 +62,9 @@ acc_.setVddDLL(vdd_dll_vec, true);
 
 void ACCTransmitterSatellite::reconfiguring(const constellation::config::Configuration& partial_config)
 {
-
+    LOG(INFO)<<"Reconfiguring"<< run_identifier;
     acc_.parseConfig(partial_config);
+    LOG(INFO)<<"Reinitializing"<< run_identifier;
     acc_.initializeForDataReadout(partial_config, "");
 
 
@@ -68,18 +73,24 @@ void ACCTransmitterSatellite::reconfiguring(const constellation::config::Configu
 void ACCTransmitterSatellite::starting(std::string_view run_identifier)
 {
     // write new method for data transmission
+    LOG(INFO)<<"Starting thread"<< run_identifier;
+    
     acc_.startDAQThread();
+    LOG(INFO)<<"join thread"<< run_identifier;
+    
     acc_.joinDAQThread();
 
 }
 
 void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 {
+        LOG(INFO)<<"Running, Listening Data"<< run_identifier;
         while(!stop_token.stop_requested()) {
         // Do work
         acc_.listenForAcdcData();
         if(stop_token.stop_requested()) {
             // Handle stop request
+            LOG(INFO)<<"Stopping"<< run_identifier;
             break;
         }
         
@@ -89,9 +100,9 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 
 
 void ACCTransmitterSatellite::stopping()
-{
+{   LOG(INFO)<<"Stopping"<< run_identifier;
     acc_.endRun();
-
+    
 }
 
 void ACCTransmitterSatellite::landing(std::string_view run_identifier)

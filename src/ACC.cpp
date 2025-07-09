@@ -641,8 +641,8 @@ void ACC::writeThread()
 }
 
 
-// void ACC::transmitData()
-// {};
+void ACC::transmitData()
+{};
 
 
 

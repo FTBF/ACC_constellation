@@ -109,6 +109,8 @@ void ACC::parseConfig(const YAML::Node& config)
 
     if(config.has("coincidentTrigMask")) params_.coincidentTrigMask = config.get<int>("coincidentTrigMask");
 
+    cout << "configured"; 
+
     for(int i = 0; i < 8; ++i)
     {
         if(config.has("coincidentTrigDelay_"   + std::to_string(i))) params_.coincidentTrigDelay[i]   = config.get<int>("coincidentTrigDelay_"   + std::to_string(i));

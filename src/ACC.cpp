@@ -40,6 +40,7 @@ ACC::~ACC()
 }
 
 ACC::ConfigParams::ConfigParams() :
+    ip(""),
     rawMode(true),
     eventNumber(100),
     triggerMode(1),
@@ -97,7 +98,7 @@ void ACC::parseConfig(const YAML::Node& config)
     params_.triggerMode = config.get<int>("triggerMode");
 
     params_.boardMask = config.get<unsigned int>("ACDCMask");
-
+    if (config.has("ip")) params_.ip = config.get<std::string>("ip");
     if(config.has("fileLabel")) params_.label = config.get<std::string>("fileLabel");
 
     if(config.has("resetACCOnStart")) params_.reset = config.get<bool>("resetACCOnStart");

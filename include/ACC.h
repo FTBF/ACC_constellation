@@ -9,8 +9,8 @@
 #include <thread>
 #include <utility>
 #include <memory>
-#include "yaml-cpp/yaml.h"
-#include "tomlplusplus/include/toml++/toml.h"
+//#include "yaml-cpp/yaml.h"
+//#include "tomlplusplus/include/toml++/toml.h"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
@@ -97,7 +97,9 @@ public:
 	void configJCPLL(unsigned int boardMask = 0xff);
 
     /*ID 27: Turn off triggers and data transfer off */
-	void endRun();
+    void startRun();
+    void stopRun();
+    void endRun();
     void resetLinks();
 	//:::
 	void resetACDC(unsigned int boardMask = 0xff); //resets the acdc boards
@@ -116,6 +118,7 @@ public:
     public:
         ConfigParams();
 
+        std::string ip;
         bool rawMode;
         int eventNumber;
         int triggerMode;
@@ -145,6 +148,8 @@ private:
 	static void got_signal(int);
     void sendJCPLLSPIWord(unsigned int word, unsigned int boardMask = 0xff, bool verbose = false);
     void writeThread();
+    void transmitData();
+    bool runWriteThread_;
 };
 
 #endif

@@ -39,69 +39,65 @@ ACCTransmitterSatellite::ACCTransmitterSatellite(std::string_view type, std::str
 
 void ACCTransmitterSatellite::initializing(constellation::config::Configuration& config)
 {
-    LOG(INFO)<<"Config"<< run_identifier;
-    acc_.initializeForDataReadout(config, "");
-    LOG(INFO)<<"End Config"<< run_identifier;
 }
 
 void ACCTransmitterSatellite::launching(){
-LOG(INFO)<<"Launching"<< run_identifier;
-LOG(INFO)<<"Get Status"<< run_identifier;
-submit_status(std::string(getStatus()));
+    LOG(INFO)<<"Launching";
+    LOG(INFO)<<"Get Status";
+    submit_status(std::string(getStatus()));
 // acc_.createAcdcs();
 // acc_.whichAcdcsConnected();
 // acc_.setHardwareTrigSrc(1, 0xff); 
 // acc_.toggleCal(1, 0x7FFF, 0xff);
 // setPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc); 
 // acc_.setPedestals(0x7FFF, 0xff, 0xff);
-LOG(INFO)<<"VDD_DLL setting"<< run_identifier;
-vector<uint32_t> vdd_dll_vec(5, 0x1f);
-acc_.setVddDLL(vdd_dll_vec, true);
+    LOG(INFO)<<"VDD_DLL setting";
+    vector<uint32_t> vdd_dll_vec(5, 0x1f);
+    acc_.setVddDLL(vdd_dll_vec, true);
 
 }
 
 void ACCTransmitterSatellite::reconfiguring(const constellation::config::Configuration& partial_config)
 {
-    LOG(INFO)<<"Reconfiguring"<< run_identifier;
+    LOG(INFO)<<"Reconfiguring";
     acc_.parseConfig(partial_config);
-    LOG(INFO)<<"Reinitializing"<< run_identifier;
+    LOG(INFO)<<"Reinitializing for run";
     acc_.initializeForDataReadout(partial_config, "");
-
 
 }
 
 void ACCTransmitterSatellite::starting(std::string_view run_identifier)
 {
     // write new method for data transmission
-    LOG(INFO)<<"Starting thread"<< run_identifier;
+    LOG(INFO)<<"Starting DAQ thread"<< run_identifier;
+    acc_.startRun();
     
-    acc_.startDAQThread();
-    LOG(INFO)<<"join thread"<< run_identifier;
-    
-    acc_.joinDAQThread();
-
+    //acc_.startDAQThread();
 }
 
 void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 {
-        LOG(INFO)<<"Running, Listening Data"<< run_identifier;
-        while(!stop_token.stop_requested()) {
+    LOG(INFO)<<"Running, Listening Data";
+    acc_.listenForAcdcData();
+    while(!stop_token.stop_requested()) {
         // Do work
-        acc_.listenForAcdcData();
         if(stop_token.stop_requested()) {
             // Handle stop request
-            LOG(INFO)<<"Stopping"<< run_identifier;
+            LOG(INFO)<<"Ending Run";
+            acc_.stopRun();
             break;
         }
-        
-        
     }
 }
 
 
 void ACCTransmitterSatellite::stopping()
-{   LOG(INFO)<<"Stopping"<< run_identifier;
+{
+    //acc_.joinDAQThread();
+
+    LOG(INFO)<<"Stopping";
     acc_.endRun();
+    LOG(INFO)<<"Stopped";
     
 }
 

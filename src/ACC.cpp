@@ -219,12 +219,12 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
         usleep(5000);
     }
 
-	// Creates ACDCs for readout
-	retval = createAcdcs();
-	if(retval==0)
-	{
+    // Creates ACDCs for readout
+    retval = createAcdcs();
+    if(retval==0)
+    {
         writeErrorLog("ACDCs could not be created");
-	}
+    }
 
     //clear slow RX buffers just in case they have leftover data.
     eth_.send(0x00000002, 0xff);
@@ -476,20 +476,31 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
         t1 = std::chrono::high_resolution_clock::now();
     }
 
-	//Enables the transfer of data from ACDC to ACC
-	eth_burst_.setBurstTarget();
-	eth_.setBurstMode(true);
-	enableTransfer(3); 
+
+    return 0;
+}
+
+void ACC::startRun()
+{
+    //Enables the transfer of data from ACDC to ACC
+    eth_burst_.setBurstTarget();
+    eth_.setBurstMode(true);
+    enableTransfer(3); 
 
     //launch file writer thread
+    //protect variable with mutex?!?
+    runWriteThread_ = true;
     data_write_thread_.reset(new std::thread(&ACC::writeThread, this));
 
     //enable "auto-transmit" mode for ACC data readout 
     eth_.send(0x23, 1);
 
     setHardwareTrigSrc(params_.triggerMode,params_.boardMask);
+}
 
-	return 0;
+void ACC::stopRun()
+{
+    runWriteThread_ = false;
 }
 
 /*ID 21: Set up the hardware trigger*/
@@ -578,7 +589,7 @@ void ACC::writeThread()
     nEvtsMax_ = 0;
     int evt = 0;
     int consequentErrors = 0;
-    while(nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
+    while(runWriteThread_ && (nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0))
     {
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
         ++evt;
@@ -639,13 +650,20 @@ void ACC::writeThread()
             else if(consequentErrors >= 4) break;
         }
 
-        nEvtsMax_ = std::max_element(acdcs_.begin(), acdcs_.end(), [](const ACDC& a, const ACDC& b){return a.getNEvents() < b.getNEvents();})->getNEvents();
+        
+        const auto& nEvtsMaxPtr = std::max_element(acdcs_.begin(), acdcs_.end(), [](const ACDC& a, const ACDC& b){return a.getNEvents() < b.getNEvents();});
+        if(nEvtsMaxPtr == acdcs_.end())
+        {
+            //THROW ERROR HERE
+            break;
+        }
+        nEvtsMax_ = nEvtsMaxPtr->getNEvents();
     }
 }
 
 
 void ACC::transmitData()
-{};
+{}
 
 
 
@@ -664,28 +682,22 @@ int ACC::listenForAcdcData()
 //    sigaction(SIGINT,&sa,NULL);
 
     int eventCounter = 0;
-    while(eventCounter<params_.eventNumber)
+    if(params_.triggerMode == 1)
     {
-        ++eventCounter;
-        if(params_.triggerMode == 1)
+        while(eventCounter<params_.eventNumber)
         {
+            ++eventCounter;
             softwareTrigger();
 
             //ensure we are past the 80 us PSEC read time
-            usleep(300);
+            usleep(350);
 
-            //check if hardware buffers are filling up
-            //and give time for readout to catch up 
-            while(eventCounter - nEvtsMax_ >= 4)
-            {
-                usleep(80);
-            }
         }
     }
 
-    endRun();
+    //endRun();
 
-    if(nEvtsMax_ < params_.eventNumber - 1) printf("Events Missing\n");
+    //if(nEvtsMax_ < params_.eventNumber - 1) printf("Events Missing\n");
 
 
     return 0;

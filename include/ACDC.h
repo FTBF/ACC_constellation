@@ -7,7 +7,7 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include "yaml-cpp/yaml.h"
+//#include "yaml-cpp/yaml.h"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Value.hpp"
 

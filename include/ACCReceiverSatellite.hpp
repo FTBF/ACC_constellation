@@ -16,13 +16,13 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
-#include "constellation/satellite/TransmitterSatellite.hpp"
+#include "constellation/satellite/ReceiverSatellite.hpp"
 #include "ACC.h"
 
-class ACCTransmitterSatellite final : public constellation::satellite::TransmitterSatellite
+class ACCReceiverSatellite final : public constellation::satellite::ReceiverSatellite
 {
 public:
-    ACCTransmitterSatellite(std::string_view type, std::string_view name);
+    ACCReceiverSatellite(std::string_view type, std::string_view name);
     void launching();
     void initializing(constellation::config::Configuration& config);
     void reconfiguring(const constellation::config::Configuration& partial_config);
@@ -30,11 +30,8 @@ public:
     void running(const std::stop_token& stop_token);
     void stopping();
     void landing(std::string_view run_identifier);
-    std::string checkVersion();
 
 private:
-    std::unique_ptr<ACC> acc_;
-    // Reset acc class
-    std::size_t hwm_reached_ {};
+    ACC acc_;
 
 };

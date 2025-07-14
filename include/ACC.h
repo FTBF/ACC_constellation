@@ -20,6 +20,8 @@ using namespace std;
 #define NUM_CH 30 //maximum number of channels for one ACDC board
 #define MAX_NUM_BOARDS 8 // maxiumum number of ACDC boards connectable to one ACC 
 
+using namespace std;
+
 class ACC
 {
 public:
@@ -88,7 +90,7 @@ public:
 	void usbWakeup(); 
 
 	/*ID 24: Special function to check connected ACDCs for their firmware version*/ 
-	void versionCheck(bool debug = false);
+	std::string versionCheck(bool debug = false);
 
 	/*ID 25: Scan possible high speed link clock phases and select the optimal phase setting*/ 
 	void scanLinkPhase(unsigned int boardMask, bool print = false);
@@ -98,6 +100,7 @@ public:
 
     /*ID 27: Turn off triggers and data transfer off */
     void startRun();
+	void startRun_R();
     void stopRun();
     void endRun();
     void resetLinks();
@@ -107,7 +110,8 @@ public:
 
     void startDAQThread();
     void joinDAQThread();
-
+	
+	std::vector<std::vector<uint64_t>> transmitData();
 	/*------------------------------------------------------------------------------------*/
 	/*--------------------------------------Write functions-------------------------------*/
 	void writeErrorLog(string errorMsg); //writes an errorlog with timestamps for debugging
@@ -117,7 +121,7 @@ public:
     {
     public:
         ConfigParams();
-
+		
         std::string ip;
         bool rawMode;
         int eventNumber;
@@ -148,7 +152,6 @@ private:
 	static void got_signal(int);
     void sendJCPLLSPIWord(unsigned int word, unsigned int boardMask = 0xff, bool verbose = false);
     void writeThread();
-    void transmitData();
     bool runWriteThread_;
 };
 

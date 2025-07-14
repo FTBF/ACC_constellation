@@ -193,6 +193,7 @@ std::vector<int> ACC::whichAcdcsConnected()
 
 	cout << "Connected Boards: " << connectedBoards.size() << endl;
 	return connectedBoards;
+	cout << "board connected";
 }
 
 /*ID 17: Main init function that controls generalk setup as well as trigger settings*/
@@ -219,12 +220,12 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
         usleep(5000);
     }
 
-    // Creates ACDCs for readout
-    retval = createAcdcs();
-    if(retval==0)
-    {
+	// Creates ACDCs for readout
+	retval = createAcdcs();
+	if(retval==0)
+	{
         writeErrorLog("ACDCs could not be created");
-    }
+	}
 
     //clear slow RX buffers just in case they have leftover data.
     eth_.send(0x00000002, 0xff);
@@ -248,6 +249,7 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
 
         // read ACDC info frame 
         eth_.send(0x100, 0x00D00000 | (1 << (acdc.getBoardIndex() + 24)));
+	cout << "Readout ACDC info frame";
 
         //wait until we have fully received all 32 expected words from the ACDC
         int iTimeout = 10;
@@ -327,6 +329,7 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
 	//ACDC trigger
 	command = 0xffB00000;
 	eth_.send(0x100, command);
+	cout << "trigger disabled";
     //disable data transmission
     enableTransfer(0);
     //disable "auto-transmit" mode for ACC data readout 
@@ -482,21 +485,27 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
 
 void ACC::startRun()
 {
-    //Enables the transfer of data from ACDC to ACC
-    eth_burst_.setBurstTarget();
-    eth_.setBurstMode(true);
-    enableTransfer(3); 
+	//Enables the transfer of data from ACDC to ACC
+	eth_burst_.setBurstTarget();
+	eth_.setBurstMode(true);
+	enableTransfer(3); 
 
     //launch file writer thread
     //protect variable with mutex?!?
-    runWriteThread_ = true;
-    data_write_thread_.reset(new std::thread(&ACC::writeThread, this));
+
 
     //enable "auto-transmit" mode for ACC data readout 
     eth_.send(0x23, 1);
 
     setHardwareTrigSrc(params_.triggerMode,params_.boardMask);
 }
+
+// void ACC::startRun_R()
+// {
+//     runWriteThread_ = true;
+//     data_write_thread_.reset(new std::thread(&ACC::writeThread, this));
+// }
+
 
 void ACC::stopRun()
 {
@@ -579,16 +588,101 @@ void ACC::toggleCal(int onoff, unsigned int channelmask, unsigned int boardMask)
 }
 
 
-void ACC::writeThread()
+// void ACC::writeThread()
+// {
+//     for(ACDC& acdc: acdcs_)
+//     {
+//         acdc.setNEvents(0);
+//     }
+
+//     nEvtsMax_ = 0;
+//     int evt = 0;
+//     int consequentErrors = 0;
+//     while(runWriteThread_ && (nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0))
+//     {
+//         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
+//         ++evt;
+//         if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 
+//            (acdc_data[1]&0xffff000000000000) == 0xac9c000000000000)
+//         {
+//             int data_bi = acdc_data[0] & 0xff;
+
+//             for(ACDC& acdc: acdcs_)
+//             {
+//                 //base command for set data readmode and which board bi to read
+//                 int bi = acdc.getBoardIndex();
+
+//                 if(data_bi == bi)
+//                 {
+//                     acdc.writeRawDataToFile(acdc_data);
+//                     acdc.incNEvents();
+//                     break;
+//                 }
+//             }
+//             consequentErrors = 0;
+//         }
+//         else
+//         {
+//             std::cout << "Header error: " << acdc_data[0] << "\t" << consequentErrors << "\n";
+//             //versionCheck(true);
+//             int i = 0;
+//             int i_Stop = 99999999;
+//             for(auto& datum : acdc_data)
+//             {
+//                 printf("%5i: %16lx\n", i, datum);
+//                 if((datum&0xffffffffffffff00) == 0x123456789abcde00) 
+//                 {
+//                     std::cout << "WEEEEHOOOOO: " << i << "\t" << evt << "\t" << nEvtsMax_ << "\t" << acdc_data.size() << "\n";
+//                     i_Stop = i + 8;
+//                 }
+//                 ++i;
+//                 if(i == i_Stop) break;
+//             }
+//             resetLinks();
+//             //std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(i);
+//             //std::cout << "Read: " << acdc_data.size() << std::endl;
+//             ++consequentErrors;
+//             if(consequentErrors >= 2)
+//             {
+//                 //try flushing data until relaigned
+//                 for(int i = 0; i < 15; ++i)
+//                 {
+//                     std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(2);
+//                     if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 
+//                        (acdc_data[1]&0xffff000000000000) == 0xac9c000000000000)
+//                     {
+//                         //we found a header, slurp up the rest of this event
+//                         eth_burst_.recieve_burst(1445-182);
+//                     }
+//                 }
+//             }
+//             else if(consequentErrors >= 4) break;
+//         }
+
+        
+//         const auto& nEvtsMaxPtr = std::max_element(acdcs_.begin(), acdcs_.end(), [](const ACDC& a, const ACDC& b){return a.getNEvents() < b.getNEvents();});
+//         if(nEvtsMaxPtr == acdcs_.end())
+//         {
+//             //THROW ERROR HERE
+//             break;
+//         }
+//         nEvtsMax_ = nEvtsMaxPtr->getNEvents();
+//     }
+// }
+
+
+std::vector<std::vector<uint64_t>> ACC::transmitData()
 {
-    for(ACDC& acdc: acdcs_)
+for(ACDC& acdc: acdcs_)
     {
         acdc.setNEvents(0);
     }
 
     nEvtsMax_ = 0;
+    std::vector<std::vector<uint64_t>> all_data;
     int evt = 0;
     int consequentErrors = 0;
+    // TODO: remove thread
     while(runWriteThread_ && (nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0))
     {
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
@@ -605,16 +699,15 @@ void ACC::writeThread()
 
                 if(data_bi == bi)
                 {
-                    acdc.writeRawDataToFile(acdc_data);
                     acdc.incNEvents();
+                    all_data.push_back(acdc_data);
                     break;
                 }
             }
             consequentErrors = 0;
         }
         else
-        {
-            std::cout << "Header error: " << acdc_data[0] << "\t" << consequentErrors << "\n";
+        {std::cout << "Header error: " << acdc_data[0] << "\t" << consequentErrors << "\n";
             //versionCheck(true);
             int i = 0;
             int i_Stop = 99999999;
@@ -659,14 +752,9 @@ void ACC::writeThread()
         }
         nEvtsMax_ = nEvtsMaxPtr->getNEvents();
     }
+
+    return all_data;
 }
-
-
-void ACC::transmitData()
-{}
-
-
-
 /*------------------------------------------------------------------------------------*/
 /*---------------------------Read functions listening for data------------------------*/
 
@@ -684,9 +772,9 @@ int ACC::listenForAcdcData()
     int eventCounter = 0;
     if(params_.triggerMode == 1)
     {
-        while(eventCounter<params_.eventNumber)
-        {
-            ++eventCounter;
+    while(eventCounter<params_.eventNumber)
+    {
+        ++eventCounter;
             softwareTrigger();
 
             //ensure we are past the 80 us PSEC read time
@@ -797,10 +885,14 @@ void ACC::setVddDLL(const std::vector<uint32_t>& vdd_dll_vec, bool resetDLL)
 }
 
 /*ID 24: Special function to check connected ACDCs for their firmware version*/ 
-void ACC::versionCheck(bool debug)
+std::string ACC::versionCheck(bool debug)
 {
-    unsigned int command;
-	
+
+    std::string version = "ACC Firmware Version: ";
+    return version;
+    
+    /**unsigned int command;
+
     auto AccBuffer = eth_.recieve_many(0x1000, 32);
     if(AccBuffer.size()==32)
     {
@@ -812,7 +904,10 @@ void ACC::versionCheck(bool debug)
 
 	if(debug)
 	{
-	    auto eAccBuffer = eth_.recieve_many(0x1100, 64+32);
+
+
+
+	     auto eAccBuffer = eth_.recieve_many(0x1100, 64+32);
 
 	    printf("  PLL lock status:\n    System PLL: %d\n    Serial PLL: %d\n    DPA PLL 1:  %d\n    DPA PLL 2:  %d\n", (AccBuffer[2] & 0x1)?1:0, (AccBuffer[2] & 0x2)?1:0, (AccBuffer[2] & 0x4)?1:0, (AccBuffer[2] & 0x8)?1:0);
 	    printf("  %-30s %10s %10s %10s %10s %10s %10s %10s %10s\n", "", "ACDC0", "ACDC1", "ACDC2", "ACDC3", "ACDC4", "ACDC5", "ACDC6", "ACDC7");
@@ -916,8 +1011,7 @@ void ACC::versionCheck(bool debug)
         {
             std::cout << "Board " << i << " is not connected" << std::endl;
         }
-    }
-
+    }*/
 }
 
 

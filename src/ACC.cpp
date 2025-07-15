@@ -5,7 +5,6 @@
 #include <string> 
 #include <thread> 
 #include <algorithm> 
-#include <thread> 
 #include <fstream> 
 #include <atomic> 
 #include <signal.h> 
@@ -684,7 +683,7 @@ for(ACDC& acdc: acdcs_)
     int evt = 0;
     int consequentErrors = 0;
     // TODO: remove thread
-    while(runWriteThread_ && (nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0))
+    while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
     {
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
         ++evt;
@@ -822,7 +821,6 @@ void ACC::resetLinks()
 /*ID 27: Turn off triggers and data transfer off */
 void ACC::endRun()
 {
-    data_write_thread_->join();
     setHardwareTrigSrc(0, params_.boardMask);
     enableTransfer(0);
     eth_.send(0x23, 0);

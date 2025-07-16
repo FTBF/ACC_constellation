@@ -831,7 +831,12 @@ for(ACDC& acdc: acdcs_)
                     }
                 }
             }
-            else if(consequentErrors >= 4) break;
+            else if(consequentErrors >= 4) {cout << "Loop: " << evt 
+                << ", nEvtsMax_: " << nEvtsMax_ 
+                << ", running_: " << running_
+                << ", consequentErrors: " << consequentErrors 
+                << endl;
+            break;} 
         }
 
         

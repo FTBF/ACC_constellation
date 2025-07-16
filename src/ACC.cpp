@@ -771,8 +771,8 @@ for(ACDC& acdc: acdcs_)
     std::vector<std::vector<uint64_t>> all_data;
     int evt = 0;
     int consequentErrors = 0;
-    while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
-    {
+    // while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
+    // {
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
         ++evt;
         if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 
@@ -829,7 +829,7 @@ for(ACDC& acdc: acdcs_)
                     }
                 }
             }
-            else if(consequentErrors >= 4) break;
+            else if(consequentErrors >= 4) return; 
         }
 
         
@@ -838,10 +838,10 @@ for(ACDC& acdc: acdcs_)
         {
             cout << "NO ACDC"<< endl;
             //THROW ERROR HERE
-            break;
+            return;
         }
         nEvtsMax_ = nEvtsMaxPtr->getNEvents();
-    }
+    // }
     return all_data;
 }
 

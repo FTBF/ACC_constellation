@@ -773,6 +773,7 @@ for(ACDC& acdc: acdcs_)
     int consequentErrors = 0;
     // while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
     // {
+        usleep(2000);
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
         ++evt;
         std::cout <<"DEBUG: ACDC DATA SIZE: " << acdc_data.size() << "\n";

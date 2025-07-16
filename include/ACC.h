@@ -71,7 +71,7 @@ public:
 	/*ID 17: Main init function that controls generalk setup as well as trigger settings*/
     // int initializeForDataReadout(const YAML::Node& config, const string& timestamp = "");
 	int initializeForDataReadout(const std::string& timestamp = "");
-	void initializeFile(const string& timestamp);
+	void initializeFile(const string& timestamp = "");
 	/*ID 18: Tells ACDCs to clear their ram.*/ 	
 	void dumpData(unsigned int boardMask); 
 
@@ -118,7 +118,7 @@ public:
 	/*------------------------------------------------------------------------------------*/
 	/*--------------------------------------Write functions-------------------------------*/
 	void writeErrorLog(string errorMsg); //writes an errorlog with timestamps for debugging
-        
+    bool running_;
 
     class ConfigParams
     {

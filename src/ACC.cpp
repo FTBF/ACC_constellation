@@ -26,7 +26,7 @@ void ACC::got_signal(int){quitacc.store(true);}
 /*--------------------------------Constructor/Deconstructor---------------------------*/
 
 /*ID:5 Constructor*/
-ACC::ACC() : eth_("192.168.46.107", "2007"), eth_burst_("192.168.46.107", "2008")
+ACC::ACC() : eth_("192.168.46.107", "2007"), eth_burst_("192.168.46.107", "2008"), running_(true)
 {
 }
 
@@ -774,7 +774,7 @@ for(ACDC& acdc: acdcs_)
     // debug
     cout << "ACDC vector size: " << acdcs_.size() << endl;
 
-    while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
+    while( (nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0) && running_)
     {
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
         ++evt;

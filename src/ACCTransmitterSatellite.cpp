@@ -91,6 +91,7 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 {
 
     while(!stop_token.stop_requested()) {
+
         LOG(INFO)<<"Running, Listening Data";
         acc_->listenForAcdcData();
         std::vector<std::vector<uint64_t>> acdc_data = acc_->transmitData();
@@ -116,6 +117,7 @@ void ACCTransmitterSatellite::stopping()
     //acc_->joinDAQThread();
     LOG_IF(WARNING, hwm_reached_ > 0) << "Could not send " << hwm_reached_ << " messages";
     LOG(INFO)<<"Stopping";
+    acc_->running_ = false;
     acc_->endRun();
     LOG(INFO)<<"Stopped";
     

@@ -196,23 +196,10 @@ std::vector<int> ACC::whichAcdcsConnected()
 	cout << "board connected";
 }
 
-/*ID 17: Main init function that controls generalk setup as well as trigger settings*/
-// int ACC::initializeForDataReadout(const YAML::Node& config, const string& timestamp)
-int ACC::initializeForDataReadout(const constellation::config::Configuration& config, const string& timestamp)
+int ACC::initializeConfig(const constellation::config::Configuration& config)
 {
-	unsigned int command;
-	int retval;
-    string outfilename = "./Results/";
-    string datafn;
-
-    //read ACC parameters from cfg file
+    int retval;
     parseConfig(config);
-
-    //parse ACC specific settings
-    if(config.has("ACC0"))
-    {
-        parseConfig(config.get<constellation::config::Dictionary>("ACC0"));
-    }
 
     if(params_.reset) 
     {
@@ -227,12 +214,7 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
         writeErrorLog("ACDCs could not be created");
 	}
 
-    //clear slow RX buffers just in case they have leftover data.
-    eth_.send(0x00000002, 0xff);
 
-    //check ACDC PLL Settings
-    // REVIEW ERRORS AND MESSAGES
-    unsigned int boardsForRead = 0;
     for(ACDC& acdc : acdcs_)
 	{
         //parse general ACDC settings
@@ -243,6 +225,65 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
         {
             acdc.parseConfig(config.get<constellation::config::Dictionary>("ACDC" + std::to_string(acdc.getBoardIndex())));
         }
+
+    }
+    return 0;
+}
+
+/*ID 17: Main init function that controls generalk setup as well as trigger settings*/
+// int ACC::initializeForDataReadout(const YAML::Node& config, const string& timestamp)
+int ACC::initializeForDataReadout(const string& timestamp)
+{
+	unsigned int command;
+	int retval;
+    
+    string datafn;
+
+    //read ACC parameters from cfg file
+    // launch 
+    // parseConfig(config);
+
+    //parse ACC specific settings
+    // if(config.has("ACC0"))
+    // {
+    //     parseConfig(config.get<constellation::config::Dictionary>("ACC0"));
+    // }
+
+    // if(params_.reset) 
+    // {
+    //     resetACC();
+    //     usleep(5000);
+    // }
+
+	// // Creates ACDCs for readout
+	// retval = createAcdcs();
+	// if(retval==0)
+	// {
+    //     writeErrorLog("ACDCs could not be created");
+	// }
+
+    //clear slow RX buffers just in case they have leftover data.
+    eth_.send(0x00000002, 0xff);
+
+    //check ACDC PLL Settings
+    // REVIEW ERRORS AND MESSAGES
+
+    // TODO: separate config
+    // config file should be 
+    // paseconfig, create ACDCs, parseconfig acdc should be in initialization
+    // other can be in launch
+
+    unsigned int boardsForRead = 0;
+    for(ACDC& acdc : acdcs_)
+	{
+        // //parse general ACDC settings
+        // acdc.parseConfig(config);
+
+        // //parse ACDC specific settings
+        // if(config.has("ACDC" + std::to_string(acdc.getBoardIndex())))
+        // {
+        //     acdc.parseConfig(config.get<constellation::config::Dictionary>("ACDC" + std::to_string(acdc.getBoardIndex())));
+        // }
 
         //reset if requested
         if(acdc.params_.reset) resetACDC(1 << acdc.getBoardIndex());
@@ -321,6 +362,7 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
         //if((1 << acdc.getBoardIndex()) & params_.boardMask) ++boardsForRead;
     }
 
+
     //usleep(100000);
 
 	//disable all triggers
@@ -342,7 +384,17 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
 	//train manchester links
 	eth_.send(0x0060, 0);
 	usleep(250);
+    unsigned int boardsForRead = 0;
+    for(ACDC& acdc : acdcs_)
+	{
+        // //parse general ACDC settings
+        // acdc.parseConfig(config);
 
+        // // //parse ACDC specific settings
+        // if(config.has("ACDC" + std::to_string(acdc.getBoardIndex())))
+        // {
+        //     acdc.parseConfig(config.get<constellation::config::Dictionary>("ACDC" + std::to_string(acdc.getBoardIndex())));
+        // }
     //scan hs link phases and pick optimal phase
     scanLinkPhase(0xff);
 
@@ -450,8 +502,46 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
     //flush data FIFOs
 	dumpData(params_.boardMask);
     //eth_.send(0x1ffffffff, 0x1);
-
+    
+    // TODO: move functionality to receiver unit
     //create file objects
+    // string rawfn;
+    // if(params_.rawMode==true)
+    // {
+    //     rawfn = outfilename + "Raw_";
+    //     if(params_.label.size() > 0) rawfn += params_.label + "_";
+    //     rawfn += timestamp + "_b";
+    // }
+
+    // for(ACDC& acdc: acdcs_)
+    // {
+    //     //base command for set data readmode and which board bi to read
+    //     int bi = acdc.getBoardIndex();
+
+    //     //skip if board is not active 
+    //     if(!((1 << bi) & params_.boardMask)) continue;
+
+    //     acdc.createFile(rawfn);
+    // }
+
+    //some setup needs at least 100 ms to complete 
+    auto t1 = std::chrono::high_resolution_clock::now();
+    while(std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count() < 200000000)
+    {
+        usleep(1000);
+        t1 = std::chrono::high_resolution_clock::now();
+    }
+
+
+    return 0;
+}
+}
+
+
+    void ACC::initializeFile(const string& timestamp)
+    {
+    auto t0 = std::chrono::high_resolution_clock::now();
+    string outfilename = "./Results/";
     string rawfn;
     if(params_.rawMode==true)
     {
@@ -480,8 +570,7 @@ int ACC::initializeForDataReadout(const constellation::config::Configuration& co
     }
 
 
-    return 0;
-}
+    }
 
 void ACC::startRun()
 {
@@ -682,7 +771,6 @@ for(ACDC& acdc: acdcs_)
     std::vector<std::vector<uint64_t>> all_data;
     int evt = 0;
     int consequentErrors = 0;
-    // TODO: remove thread
     while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
     {
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);

@@ -54,7 +54,7 @@ void ACCTransmitterSatellite::initializing(constellation::config::Configuration&
 {
     LOG(INFO)<<"Initializing ACC Transmitter Satellite";
     acc_.reset(new ACC());
-
+    acc_->initializeConfig(config);
 
 }
 
@@ -62,24 +62,17 @@ void ACCTransmitterSatellite::launching(){
 LOG(INFO)<<"Launching";
 LOG(INFO)<<"Get Status";
     submit_status(std::string(getStatus()));
-// acc_->createAcdcs();
-// acc_->whichAcdcsConnected();
-// acc_->setHardwareTrigSrc(1, 0xff); 
-// acc_->toggleCal(1, 0x7FFF, 0xff);
-// setPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc); 
-// acc_->setPedestals(0x7FFF, 0xff, 0xff);
-LOG(INFO)<<"VDD_DLL setting";
-vector<uint32_t> vdd_dll_vec(5, 0x1f);
-acc_->setVddDLL(vdd_dll_vec, true);
+    acc_->initializeForDataReadout("");
+
 
 }
 
 void ACCTransmitterSatellite::reconfiguring(const constellation::config::Configuration& partial_config)
 {
     LOG(INFO)<<"Reconfiguring";
-    acc_->parseConfig(partial_config);
+    // acc_->parseConfig(partial_config);
     LOG(INFO)<<"Reinitializing for run";
-    acc_->initializeForDataReadout(partial_config, "");
+    acc_->initializeConfig(partial_config);
 
 }
 

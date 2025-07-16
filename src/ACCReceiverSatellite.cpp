@@ -41,6 +41,8 @@
 
 // void ACCReceiverSatellite::initializing(constellation::config::Configuration& config)
 // {
+// std::string timestamp = "";
+// acc_.initialization(timestamp);
 // }
 
 // void ACCReceiverSatellite::launching(){

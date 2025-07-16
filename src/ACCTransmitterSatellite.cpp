@@ -94,11 +94,15 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 
         LOG(INFO)<<"Running, Listening Data";
         acc_->listenForAcdcData();
+        LOG(INFO)<<"Transmitting Data";
         std::vector<std::vector<uint64_t>> acdc_data = acc_->transmitData();
+        LOG(INFO)<< "Transmitted" << acdc_data.size() << " frames";
         auto msg = newDataMessage(acdc_data.size());
+        LOG(INFO) << "Data message created with " << acdc_data.size() << " frames";
         for(const auto& frame : acdc_data) {
             // Copy vector to frame
             msg.addFrame(std::vector{frame});
+            LOG(INFO) << "Added frame of size " << frame.size() << " to message";
         }
 
         const auto success = trySendDataMessage(msg);
@@ -117,7 +121,6 @@ void ACCTransmitterSatellite::stopping()
     //acc_->joinDAQThread();
     LOG_IF(WARNING, hwm_reached_ > 0) << "Could not send " << hwm_reached_ << " messages";
     LOG(INFO)<<"Stopping";
-    acc_->running_ = false;
     acc_->endRun();
     LOG(INFO)<<"Stopped";
     

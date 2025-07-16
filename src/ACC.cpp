@@ -829,7 +829,7 @@ for(ACDC& acdc: acdcs_)
                     }
                 }
             }
-            else if(consequentErrors >= 4) return; 
+            else if(consequentErrors >= 4) return std::vector<std::vector<uint64_t>>{};
         }
 
         
@@ -838,7 +838,7 @@ for(ACDC& acdc: acdcs_)
         {
             cout << "NO ACDC"<< endl;
             //THROW ERROR HERE
-            return;
+            return std::vector<std::vector<uint64_t>>{};
         }
         nEvtsMax_ = nEvtsMaxPtr->getNEvents();
     // }

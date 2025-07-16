@@ -55,6 +55,7 @@ void ACCTransmitterSatellite::initializing(constellation::config::Configuration&
     LOG(INFO)<<"Initializing ACC Transmitter Satellite";
     acc_.reset(new ACC());
     acc_->initializeConfig(config);
+    
 
 }
 
@@ -63,7 +64,8 @@ LOG(INFO)<<"Launching";
 LOG(INFO)<<"Get Status";
     submit_status(std::string(getStatus()));
     acc_->initializeForDataReadout("");
-
+    // debug
+    acc_->dumpData(acc_->params_.boardMask);
 
 }
 

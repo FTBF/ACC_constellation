@@ -775,6 +775,7 @@ for(ACDC& acdc: acdcs_)
     // {
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
         ++evt;
+        std::cout <<"DEBUG: ACDC DATA SIZE: " << acdc_data.size() << "\n";
         if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 
            (acdc_data[1]&0xffff000000000000) == 0xac9c000000000000)
         {

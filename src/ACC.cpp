@@ -533,8 +533,8 @@ int ACC::initializeForDataReadout(const string& timestamp)
     }
 
 
-    return 0;
-}
+    
+}return 0;
 }
 
 
@@ -835,6 +835,7 @@ for(ACDC& acdc: acdcs_)
         const auto& nEvtsMaxPtr = std::max_element(acdcs_.begin(), acdcs_.end(), [](const ACDC& a, const ACDC& b){return a.getNEvents() < b.getNEvents();});
         if(nEvtsMaxPtr == acdcs_.end())
         {
+            cout << "NO ACDC"<< endl;
             //THROW ERROR HERE
             break;
         }

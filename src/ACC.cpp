@@ -809,7 +809,7 @@ for(ACDC& acdc: acdcs_)
                 }
                 ++i;
                 if(i == i_Stop) {cout << "i reached to the i stop" << i << endl;
-                    break;
+                    break;}
             }
             resetLinks();
             //std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(i);
@@ -842,9 +842,9 @@ for(ACDC& acdc: acdcs_)
         }
         nEvtsMax_ = nEvtsMaxPtr->getNEvents();
     }
-
     return all_data;
 }
+
 /*------------------------------------------------------------------------------------*/
 /*---------------------------Read functions listening for data------------------------*/
 

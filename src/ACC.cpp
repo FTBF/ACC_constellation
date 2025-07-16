@@ -384,7 +384,7 @@ int ACC::initializeForDataReadout(const string& timestamp)
 	//train manchester links
 	eth_.send(0x0060, 0);
 	usleep(250);
-    unsigned int boardsForRead = 0;
+    // unsigned int boardsForRead = 0;
     for(ACDC& acdc : acdcs_)
 	{
         // //parse general ACDC settings

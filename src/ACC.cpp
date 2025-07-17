@@ -1068,8 +1068,7 @@ std::string ACC::versionCheck(bool debug)
             std::vector<uint64_t> buf = eth_.recieve_many(0x1200+i, bufLen, EthernetInterface::NO_ADDR_INC);
             for (unsigned int j = 0; j < buf.size(); ++j)
             {
-                if(j < 5) ss << std::hex << buf.at(j) << " ";
-                else      ss << std::dec << buf.at(j) << " ";
+                ss << std::hex << buf.at(j) << " ";
             }
             
             ss << "Board " << i << " has the firmware version: " << std::hex << buf.at(2) << std::dec;

@@ -801,7 +801,7 @@ std::vector<std::vector<uint64_t>> ACC::transmitData()
             int i_Stop = 99999999;
             for(auto& datum : acdc_data)
             {
-                printf("%5i: %16lx\n", i, datum);
+                // printf("%5i: %16lx\n", i, datum);
                 if((datum&0xffffffffffffff00) == 0x123456789abcde00) 
                 {
                     std::cout << "WEEEEHOOOOO: " << i << "\t" << evt << "\t" << nEvtsMax_ << "\t" << acdc_data.size() << "\n";
@@ -823,6 +823,7 @@ std::vector<std::vector<uint64_t>> ACC::transmitData()
                     if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 
                        (acdc_data[1]&0xffff000000000000) == 0xac9c000000000000)
                     {
+                        std::cout << "Found header after flushing: " << i << "\n";
                         //we found a header, slurp up the rest of this event
                         eth_burst_.recieve_burst(1445-182);
                     }

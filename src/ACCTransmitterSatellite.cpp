@@ -98,9 +98,9 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
         acc_->listenForAcdcData();
         LOG(INFO)<<"Transmitting Data";
         std::vector<std::vector<uint64_t>> acdc_data = acc_->transmitData();
-        LOG(INFO)<< "Transmitted" << acdc_data.size() << " frames";
+        LOG(DEBUG)<< "Transmitted " << acdc_data.size() << " frames";
         auto msg = newDataMessage(acdc_data.size());
-        LOG(INFO) << "Data message created with " << acdc_data.size() << " frames";
+        LOG(DEBUG) << "Data message created with " << acdc_data.size() << " frames";
         for(const auto& frame : acdc_data) {
             // Copy vector to frame
             msg.addFrame(std::vector{frame});

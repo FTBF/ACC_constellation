@@ -863,15 +863,14 @@ int ACC::listenForAcdcData()
     int eventCounter = 0;
     if(params_.triggerMode == 1)
     {
-    while(eventCounter<params_.eventNumber)
-    {
+
         ++eventCounter;
             softwareTrigger();
 
             //ensure we are past the 80 us PSEC read time
             usleep(350);
 
-        }
+        
     }
 
     //endRun();

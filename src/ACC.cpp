@@ -773,7 +773,7 @@ for(ACDC& acdc: acdcs_)
     int consequentErrors = 0;
     // while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
     // {
-        usleep(5000);
+        // usleep(5000);
         std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
         ++evt;
         std::cout <<"DEBUG: ACDC DATA SIZE: " << acdc_data.size() << "\n";
@@ -810,8 +810,7 @@ for(ACDC& acdc: acdcs_)
                     i_Stop = i + 8;
                 }
                 ++i;
-                if(i == i_Stop) {cout << "i reached to the i stop" << i << endl;
-                    break;}
+                if(i == i_Stop) break;
             }
             resetLinks();
             //std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(i);
@@ -1060,11 +1059,19 @@ std::string ACC::versionCheck(bool debug)
     //Loop over the ACC buffer words that show the ACDC buffer size
     //32 words represent a connected ACDC
     for(int i = 0; i < MAX_NUM_BOARDS; i++)
-    {
+    {std::stringstream ss;
+
         uint64_t bufLen = eth_.recieve(0x1138+i);
+        
         if(bufLen > 5)
         {
             std::vector<uint64_t> buf = eth_.recieve_many(0x1200+i, bufLen, EthernetInterface::NO_ADDR_INC);
+            for (unsigned int j = 0; j < buf.size(); ++j)
+            {
+                if(j < 5) ss << std::hex << buf.at(j) << " ";
+                else      ss << std::dec << buf.at(j) << " ";
+            }
+            
             ss << "Board " << i << " has the firmware version: " << std::hex << buf.at(2) << std::dec;
             ss << " from " << std::hex << ((buf.at(4) >> 8) & 0xff) << std::dec << "/" << std::hex << (buf.at(4) & 0xff) << std::dec << "/" << std::hex << buf.at(3) << std::dec << std::endl;
             std::string accVersion = ss.str();
@@ -1077,12 +1084,12 @@ std::string ACC::versionCheck(bool debug)
 		version += buf;
         snprintf(buf, sizeof(buf),"  PLL lock status:\n    ACC PLL:    %d\n    Serial PLL: %d\n    JC PLL:     %d\n    SYS PLL:    %d\n    WR PLL:     %d\n", (buf[6] & 0x4)?1:0, (buf[6] & 0x2)?1:0, (buf[6] & 0x200)?1:0, (buf[6] & 0x8)?1:0, (buf[6] & 0x1)?1:0);
         version += buf;
-                snprintf(buf, sizeof(buf),"  FLL Locks:              %8lx\n", (buf[6] >> 4)&0x1f);
-                version += buf;
-                snprintf(buf, sizeof(buf),"  ACC 40 MHz:             %8.3f MHz\n", float(buf[7])/1000.0);
-                version += buf;
-                snprintf(buf, sizeof(buf),"  JCPLL 40 MHz:           %8.3f MHz\n", float(buf[8])/1000.0);
-                version += buf;
+        snprintf(buf, sizeof(buf),"  FLL Locks:              %8lx\n", (buf[6] >> 4)&0x1f);
+        version += buf;
+        snprintf(buf, sizeof(buf),"  ACC 40 MHz:             %8.3f MHz\n", float(buf[7])/1000.0);
+        version += buf;
+        snprintf(buf, sizeof(buf),"  JCPLL 40 MHz:           %8.3f MHz\n", float(buf[8])/1000.0);
+        version += buf;
 		snprintf(buf, sizeof(buf),"  Backpressure:           %8d\n", (buf[5] & 0x2)?1:0);
         version += buf;
 		snprintf(buf, sizeof(buf),"  40 MBPS parity error:   %8d\n", (buf[5] & 0x1)?1:0);

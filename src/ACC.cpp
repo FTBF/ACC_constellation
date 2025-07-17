@@ -762,10 +762,7 @@ void ACC::toggleCal(int onoff, unsigned int channelmask, unsigned int boardMask)
 
 std::vector<std::vector<uint64_t>> ACC::transmitData()
 {
-for(ACDC& acdc: acdcs_)
-    {
-        acdc.setNEvents(0);
-    }
+
 
     nEvtsMax_ = 0;
     std::vector<std::vector<uint64_t>> all_data;
@@ -790,7 +787,8 @@ for(ACDC& acdc: acdcs_)
                 if(data_bi == bi)
                 {
                     acdc.incNEvents();
-                    all_data.push_back(acdc_data);
+
+                    all_data.emplace_back(std::move(acdc_data));
                     break;
                 }
             }
@@ -833,15 +831,6 @@ for(ACDC& acdc: acdcs_)
             else if(consequentErrors >= 4) return std::vector<std::vector<uint64_t>>{};
         }
 
-        
-        const auto& nEvtsMaxPtr = std::max_element(acdcs_.begin(), acdcs_.end(), [](const ACDC& a, const ACDC& b){return a.getNEvents() < b.getNEvents();});
-        if(nEvtsMaxPtr == acdcs_.end())
-        {
-            cout << "NO ACDC"<< endl;
-            //THROW ERROR HERE
-            return std::vector<std::vector<uint64_t>>{};
-        }
-        nEvtsMax_ = nEvtsMaxPtr->getNEvents();
     // }
     return all_data;
 }
@@ -860,18 +849,17 @@ int ACC::listenForAcdcData()
 //    sigfillset(&sa.sa_mask);
 //    sigaction(SIGINT,&sa,NULL);
 
-    int eventCounter = 0;
+   
     if(params_.triggerMode == 1)
     {
 
-        ++eventCounter;
+       
             softwareTrigger();
 
             //ensure we are past the 80 us PSEC read time
-            usleep(350);
+            usleep(1000);
 
-        
-    }
+        }
 
     //endRun();
 

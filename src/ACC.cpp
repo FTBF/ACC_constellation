@@ -814,7 +814,8 @@ std::vector<std::vector<uint64_t>> ACC::transmitData()
             //std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(i);
             //std::cout << "Read: " << acdc_data.size() << std::endl;
             ++consequentErrors;
-            if(consequentErrors >= 2)
+            if(true)
+                // consequentErrors >= 2)
             {
                 cout << "Flushing data until realigned\n";
                 //try flushing data until relaigned

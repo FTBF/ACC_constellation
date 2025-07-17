@@ -857,7 +857,7 @@ int ACC::listenForAcdcData()
             softwareTrigger();
 
             //ensure we are past the 80 us PSEC read time
-            usleep(1000);
+            // usleep(1000);
 
         }
 

@@ -816,6 +816,7 @@ std::vector<std::vector<uint64_t>> ACC::transmitData()
             ++consequentErrors;
             if(consequentErrors >= 2)
             {
+                cout << "Flushing data until realigned\n";
                 //try flushing data until relaigned
                 for(int i = 0; i < 15; ++i)
                 {

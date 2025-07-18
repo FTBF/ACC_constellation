@@ -18,6 +18,7 @@
 using namespace std;
 
 
+
 /*ID:3+4 sigint handling*/
 std::atomic<bool> quitacc(false); 
 void ACC::got_signal(int){quitacc.store(true);}
@@ -538,7 +539,7 @@ int ACC::initializeForDataReadout(const string& timestamp)
 }
 
 
-    void ACC::initializeFile(const string& timestamp)
+    std::string ACC::nameFile(const string& timestamp)
     {
     auto t0 = std::chrono::high_resolution_clock::now();
     string outfilename = "./Results/";
@@ -547,27 +548,30 @@ int ACC::initializeForDataReadout(const string& timestamp)
     {
         rawfn = outfilename + "Raw_";
         if(params_.label.size() > 0) rawfn += params_.label + "_";
-        rawfn += timestamp + "_b";
+        // rawfn += timestamp + "_b";
+        rawfn += to_string(t0.time_since_epoch().count()) + "_b";
     }
 
-    for(ACDC& acdc: acdcs_)
-    {
-        //base command for set data readmode and which board bi to read
-        int bi = acdc.getBoardIndex();
+    return rawfn;
 
-        //skip if board is not active 
-        if(!((1 << bi) & params_.boardMask)) continue;
+    // for(ACDC& acdc: acdcs_)
+    // {
+    //     //base command for set data readmode and which board bi to read
+    //     int bi = acdc.getBoardIndex();
 
-        acdc.createFile(rawfn);
-    }
+    //     //skip if board is not active 
+    //     if(!((1 << bi) & params_.boardMask)) continue;
+
+    //     acdc.createFile(rawfn);
+    // }
 
     //some setup needs at least 100 ms to complete 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    while(std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count() < 200000000)
-    {
-        usleep(1000);
-        t1 = std::chrono::high_resolution_clock::now();
-    }
+    // auto t1 = std::chrono::high_resolution_clock::now();
+    // while(std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count() < 200000000)
+    // {
+    //     usleep(1000);
+    //     t1 = std::chrono::high_resolution_clock::now();
+    // }
 
 
     }
@@ -778,7 +782,7 @@ std::vector<std::vector<uint64_t>> ACC::transmitData()
            (acdc_data[1]&0xffff000000000000) == 0xac9c000000000000)
         {
             int data_bi = acdc_data[0] & 0xff;
-
+            // 
             for(ACDC& acdc: acdcs_)
             {
                 //base command for set data readmode and which board bi to read

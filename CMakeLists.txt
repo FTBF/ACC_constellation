@@ -19,6 +19,7 @@ target_include_directories(ACCReceiverSatellite PRIVATE "include")
 
 # Add project internal dependencies
 target_link_libraries(ACCTransmitterSatellite PUBLIC acctransmitter-lib)
+target_link_libraries(ACCReceiverSatellite PUBLIC acctransmitter-lib)
 
 # Ensure compilation with (at least) C++20
 set_target_properties(ACCTransmitterSatellite PROPERTIES CXX_STANDARD 20)

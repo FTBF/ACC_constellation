@@ -75,7 +75,7 @@ void ACCReceiverSatellite::starting(std::string_view run_identifier)
 void ACCReceiverSatellite::receive_data(constellation::message::CDTP1Message data_message){
     LOG(INFO) << "Received Data message";
     const auto& header = data_message.getHeader();
-    auto payload = data_message.getPayload();
+    const auto& payload = data_message.getPayload();
     LOG(DEBUG) << "Writing data event";
     LOG(DEBUG) << "Received data message from " << header.getSender();
     file_.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));

@@ -72,7 +72,7 @@ void ACCReceiverSatellite::starting(std::string_view run_identifier)
 }
 
 
-void ACCReceiverSatellite::receive_data(constellation::message::CDTP1Message data_message){
+void ACCReceiverSatellite::receive_data(constellation::message::CDTP1Message& data_message){
     LOG(INFO) << "Received Data message";
     const auto& header = data_message.getHeader();
     const auto& payload = data_message.getPayload();
@@ -83,6 +83,9 @@ void ACCReceiverSatellite::receive_data(constellation::message::CDTP1Message dat
     if(!file_.good()) {
         throw SatelliteError("Error writing to file");
     }
+
+    // reassign?
+
 
 }
 

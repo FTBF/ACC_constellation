@@ -28,7 +28,7 @@ public:
     void reconfiguring(const constellation::config::Configuration& partial_config);
     void starting(std::string_view run_identifier);
     // void receive_bor(const constellation::message::CDTP1Message::Header& header, constellation::config::Configuration config);
-    void receive_data(constellation::message::CDTP1Message data_message);
+    void receive_data(constellation::message::CDTP1Message& data_message);
     // void receive_eor(const constellation::message::CDTP1Message::Header& header, constellation::config::Dictionary run_metadata);
     void stopping();
     void landing(std::string_view run_identifier);

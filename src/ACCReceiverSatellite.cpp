@@ -76,7 +76,7 @@ void ACCReceiverSatellite::receive_bor(const constellation::message::CDTP1Messag
 }
 
 
-void receive_eor(const constellation::message::CDTP1Message::Header& header, constellation::config::Dictionary run_metadata){
+void ACCReceiverSatellite::receive_eor(const constellation::message::CDTP1Message::Header& header, constellation::config::Dictionary run_metadata){
 
 }
 // void EudaqNativeWriterSatellite::FileSerializer::write(std::span<const std::byte> data) {

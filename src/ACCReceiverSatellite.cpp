@@ -45,6 +45,8 @@ void ACCReceiverSatellite::initializing(constellation::config::Configuration& co
 {
 base_path_ = config.getPath("output_directory");
 validate_output_directory(base_path_);
+
+
 std::string timestamp = "";
 
 }
@@ -63,12 +65,15 @@ void ACCReceiverSatellite::starting(std::string_view run_identifier)
     // std::filesystem::path base_path_ = "~/constellation/results";
     std::string fileName = acc_.nameFile();
     LOG(DEBUG) << "Create File" << run_identifier;
+
     file_ = create_output_file(base_path_, fileName + std::string(run_identifier), "raw", true);
     if (!file_.is_open()) {
         throw SatelliteError("Could not open output file for writing");
     }
+    LOG(DEBUG) << "Output path: " << base_path_;
+    LOG(INFO) << "Final file name: " << fileName + std::string(run_identifier) << ".raw";
     LOG(INFO) << "Opened output file: " << fileName;
-    LOG(INFO) << "Starting run " << run_identifier;
+    LOG(INFO) << "Starting " << run_identifier;
     
     
 

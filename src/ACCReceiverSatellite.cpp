@@ -66,7 +66,7 @@ void ACCReceiverSatellite::starting(std::string_view run_identifier)
     std::string fileName = acc_.nameFile();
     LOG(DEBUG) << "Create File" << run_identifier;
 
-    file_ = create_output_file(base_path_, fileName + std::string(run_identifier), "raw", true);
+    file_ = create_output_file(base_path_, fileName + "_" + std::string(run_identifier), "raw", true);
     if (!file_.is_open()) {
         throw SatelliteError("Could not open output file for writing");
     }

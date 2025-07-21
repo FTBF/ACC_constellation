@@ -543,14 +543,18 @@ int ACC::initializeForDataReadout(const string& timestamp)
     {
     auto t0 = std::chrono::system_clock::now();
     std::time_t now = std::chrono::system_clock::to_time_t(t0);
+    std::tm* now_tm = std::localtime(&now);
+    char timebuf[32];
+    std::strftime(timebuf, sizeof(timebuf), "%Y%m%d-%H%M%S", now_tm);
+    std::string timestamp = timebuf;
+
     string outfilename = "./Results/";
     string rawfn;
     if(params_.rawMode==true)
     {
         rawfn = outfilename + "Raw_";
         if(params_.label.size() > 0) rawfn += params_.label + "_";
-        // rawfn += timestamp + "_b";
-        rawfn += to_string(now) + "_b";
+        rawfn += timestamp + "_b";
     }
 
     return rawfn;

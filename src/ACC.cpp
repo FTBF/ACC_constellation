@@ -546,7 +546,7 @@ int ACC::initializeForDataReadout(const string& timestamp)
     std::tm* now_tm = std::localtime(&now);
     char timebuf[32];
     std::strftime(timebuf, sizeof(timebuf), "%Y%m%d-%H%M%S", now_tm);
-    std::string timestamp = timebuf;
+    std::string timestring = timebuf;
 
     string outfilename = "./Results/";
     string rawfn;

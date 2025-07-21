@@ -554,7 +554,7 @@ int ACC::initializeForDataReadout(const string& timestamp)
     {
         rawfn = outfilename + "Raw_";
         if(params_.label.size() > 0) rawfn += params_.label + "_";
-        rawfn += timestamp + "_b";
+        rawfn += timestring + "_b";
     }
 
     return rawfn;

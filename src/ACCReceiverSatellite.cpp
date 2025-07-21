@@ -35,7 +35,8 @@ using namespace constellation::utils;
 
 ACCReceiverSatellite::ACCReceiverSatellite(std::string_view type, std::string_view name)
     : ReceiverSatellite(type, name)
-{ support_reconfigure();
+{ 
+    // support_reconfigure();
     // acc_.setName(name);
     // acc_.setType(type);
 }

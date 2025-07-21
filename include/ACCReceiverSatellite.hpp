@@ -25,7 +25,6 @@ public:
     ACCReceiverSatellite(std::string_view type, std::string_view name);
     void launching();
     void initializing(constellation::config::Configuration& config);
-    void reconfiguring(const constellation::config::Configuration& partial_config);
     void starting(std::string_view run_identifier);
     void receive_bor(const constellation::message::CDTP1Message::Header& header, constellation::config::Configuration config);
     void receive_data(constellation::message::CDTP1Message data_message);

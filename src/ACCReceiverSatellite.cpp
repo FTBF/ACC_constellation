@@ -43,6 +43,8 @@ ACCReceiverSatellite::ACCReceiverSatellite(std::string_view type, std::string_vi
 
 void ACCReceiverSatellite::initializing(constellation::config::Configuration& config)
 {
+base_path_ = config.getPath("output_directory");
+validate_output_directory(base_path_);
 std::string timestamp = "";
 
 }
@@ -58,7 +60,7 @@ void ACCReceiverSatellite::launching(){
 void ACCReceiverSatellite::starting(std::string_view run_identifier)
 {
     // TODO: set as parameter (config)
-    std::filesystem::path base_path_ = "/constellation/results";
+    // std::filesystem::path base_path_ = "~/constellation/results";
     std::string fileName = acc_.nameFile();
     LOG(DEBUG) << "Create File" << run_identifier;
     file_ = create_output_file(base_path_, fileName + std::string(run_identifier), "raw", true);

@@ -35,5 +35,6 @@ public:
 private:
     ACC acc_;
     std::ofstream file_;
+    std::filesystem::path base_path_;
 
 };

@@ -541,7 +541,7 @@ int ACC::initializeForDataReadout(const string& timestamp)
 
     std::string ACC::nameFile(const string& timestamp)
     {
-    auto t0 = std::chrono::high_resolution_clock::now();
+    auto t0 = std::chrono::system_clock::now();
     std::time_t now = std::chrono::system_clock::to_time_t(t0);
     string outfilename = "./Results/";
     string rawfn;

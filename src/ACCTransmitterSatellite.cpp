@@ -97,8 +97,9 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
         LOG(INFO)<<"Running, Listening Data";
         acc_->listenForAcdcData();
         LOG(INFO)<<"Transmitting Data";
+        std::vector<std::vector<uint64_t>> acdc_data;
         try{
-        std::vector<std::vector<uint64_t>> acdc_data = acc_->transmitData();}
+        acdc_data = acc_->transmitData();}
         catch(const std::exception& e){
             LOG(WARNING) << "Burst Readout timeout occurred: " << e.what(); 
         }

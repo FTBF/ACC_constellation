@@ -299,13 +299,13 @@ std::vector<uint64_t> EthernetInterface::recieve_burst(int numwords, int timeout
         {
             printf("Burst Read Timeout\n");
             // exit(1);
-            std::runtime_error("BURST READ TIMEOUT")
+            std::runtime_error("BURST READ TIMEOUT");
         }
         else
         {
             perror("select()");
             // exit(1);
-            std::runtime_error("BURST READ TIMEOUT")
+            std::runtime_error("BURST READ TIMEOUT");
         }
     }
 

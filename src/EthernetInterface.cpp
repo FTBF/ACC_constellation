@@ -287,16 +287,16 @@ std::vector<uint64_t> EthernetInterface::recieve_burst(int numwords, int timeout
         
             wordsRead += (numbytes-2)/8;
         }
-        else if(retval == 0)
-        {
-            printf("Burst Read Timeout\n");
-            exit(1);
-        }
-        else
-        {
-            perror("select()");
-            exit(1);
-        }
+        // else if(retval == 0)
+        // {
+        //     printf("Burst Read Timeout\n");
+        //     exit(1);
+        // }
+        // else
+        // {
+        //     perror("select()");
+        //     exit(1);
+        // }
     }
 
     return data;

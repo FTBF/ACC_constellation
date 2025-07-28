@@ -93,11 +93,15 @@ void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 {
 
     while(!stop_token.stop_requested()) {
-
+        
         LOG(INFO)<<"Running, Listening Data";
         acc_->listenForAcdcData();
         LOG(INFO)<<"Transmitting Data";
-        std::vector<std::vector<uint64_t>> acdc_data = acc_->transmitData();
+        try{
+        std::vector<std::vector<uint64_t>> acdc_data = acc_->transmitData();}
+        catch(const std::str& s){
+            std::str << "Caught burst read timeout: " << s.what() << std::endl;
+        }
         LOG(DEBUG)<< "Transmitted " << acdc_data.size() << " frames";
         auto msg = newDataMessage(acdc_data.size());
         LOG(DEBUG) << "Data message created with " << acdc_data.size() << " frames";

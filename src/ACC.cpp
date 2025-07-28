@@ -780,7 +780,8 @@ std::vector<std::vector<uint64_t>> ACC::transmitData()
     // while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
     // {
         // usleep(5000);
-        std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
+        std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445, 1);
+        // timeout at 1s
         ++evt;
         std::cout <<"DEBUG: ACDC DATA SIZE: " << acdc_data.size() << "\n";
         if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 

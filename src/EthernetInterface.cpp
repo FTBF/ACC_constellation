@@ -304,7 +304,7 @@ std::vector<uint64_t> EthernetInterface::recieve_burst(int numwords, int timeout
         else
         {
             perror("select()");
-            // exit(1);
+            exit(1);
             throw std::runtime_error("BURST READ TIMEOUT");
         }
     }

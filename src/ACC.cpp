@@ -18,6 +18,7 @@
 using namespace std;
 
 
+
 /*ID:3+4 sigint handling*/
 std::atomic<bool> quitacc(false); 
 void ACC::got_signal(int){quitacc.store(true);}
@@ -26,7 +27,7 @@ void ACC::got_signal(int){quitacc.store(true);}
 /*--------------------------------Constructor/Deconstructor---------------------------*/
 
 /*ID:5 Constructor*/
-ACC::ACC() : eth_("192.168.46.107", "2007"), eth_burst_("192.168.46.107", "2008"), running_(true)
+ACC::ACC() : eth_("192.168.46.107", "2007"), eth_burst_("192.168.46.107", "2008")
 {
 }
 
@@ -538,36 +539,44 @@ int ACC::initializeForDataReadout(const string& timestamp)
 }
 
 
-    void ACC::initializeFile(const string& timestamp)
+    std::string ACC::nameFile(const string& timestamp)
     {
-    auto t0 = std::chrono::high_resolution_clock::now();
+    auto t0 = std::chrono::system_clock::now();
+    std::time_t now = std::chrono::system_clock::to_time_t(t0);
+    std::tm* now_tm = std::localtime(&now);
+    char timebuf[32];
+    std::strftime(timebuf, sizeof(timebuf), "%Y%m%d-%H%M%S", now_tm);
+    std::string timestring = timebuf;
+
     string outfilename = "./Results/";
     string rawfn;
     if(params_.rawMode==true)
     {
         rawfn = outfilename + "Raw_";
         if(params_.label.size() > 0) rawfn += params_.label + "_";
-        rawfn += timestamp + "_b";
+        rawfn += timestring + "_b";
     }
 
-    for(ACDC& acdc: acdcs_)
-    {
-        //base command for set data readmode and which board bi to read
-        int bi = acdc.getBoardIndex();
+    return rawfn;
 
-        //skip if board is not active 
-        if(!((1 << bi) & params_.boardMask)) continue;
+    // for(ACDC& acdc: acdcs_)
+    // {
+    //     //base command for set data readmode and which board bi to read
+    //     int bi = acdc.getBoardIndex();
 
-        acdc.createFile(rawfn);
-    }
+    //     //skip if board is not active 
+    //     if(!((1 << bi) & params_.boardMask)) continue;
+
+    //     acdc.createFile(rawfn);
+    // }
 
     //some setup needs at least 100 ms to complete 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    while(std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count() < 200000000)
-    {
-        usleep(1000);
-        t1 = std::chrono::high_resolution_clock::now();
-    }
+    // auto t1 = std::chrono::high_resolution_clock::now();
+    // while(std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count() < 200000000)
+    // {
+    //     usleep(1000);
+    //     t1 = std::chrono::high_resolution_clock::now();
+    // }
 
 
     }
@@ -762,27 +771,24 @@ void ACC::toggleCal(int onoff, unsigned int channelmask, unsigned int boardMask)
 
 std::vector<std::vector<uint64_t>> ACC::transmitData()
 {
-for(ACDC& acdc: acdcs_)
-    {
-        acdc.setNEvents(0);
-    }
+
 
     nEvtsMax_ = 0;
     std::vector<std::vector<uint64_t>> all_data;
     int evt = 0;
     int consequentErrors = 0;
-    // debug
-    cout << "ACDC vector size: " << acdcs_.size() << endl;
-
-    while( (nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0) && running_)
-    {
-        std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445);
+    // while( nEvtsMax_ < params_.eventNumber || params_.eventNumber < 0)
+    // {
+        // usleep(5000);
+        std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(1445, 1);
+        // timeout at 1s
         ++evt;
+        std::cout <<"DEBUG: ACDC DATA SIZE: " << acdc_data.size() << "\n";
         if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 
            (acdc_data[1]&0xffff000000000000) == 0xac9c000000000000)
         {
             int data_bi = acdc_data[0] & 0xff;
-
+            // 
             for(ACDC& acdc: acdcs_)
             {
                 //base command for set data readmode and which board bi to read
@@ -791,7 +797,8 @@ for(ACDC& acdc: acdcs_)
                 if(data_bi == bi)
                 {
                     acdc.incNEvents();
-                    all_data.push_back(acdc_data);
+
+                    all_data.emplace_back(std::move(acdc_data));
                     break;
                 }
             }
@@ -804,7 +811,7 @@ for(ACDC& acdc: acdcs_)
             int i_Stop = 99999999;
             for(auto& datum : acdc_data)
             {
-                printf("%5i: %16lx\n", i, datum);
+                // printf("%5i: %16lx\n", i, datum);
                 if((datum&0xffffffffffffff00) == 0x123456789abcde00) 
                 {
                     std::cout << "WEEEEHOOOOO: " << i << "\t" << evt << "\t" << nEvtsMax_ << "\t" << acdc_data.size() << "\n";
@@ -817,8 +824,10 @@ for(ACDC& acdc: acdcs_)
             //std::vector<uint64_t> acdc_data = eth_burst_.recieve_burst(i);
             //std::cout << "Read: " << acdc_data.size() << std::endl;
             ++consequentErrors;
-            if(consequentErrors >= 2)
+            if(true)
+                // consequentErrors >= 2)
             {
+                cout << "Flushing data until realigned\n";
                 //try flushing data until relaigned
                 for(int i = 0; i < 15; ++i)
                 {
@@ -826,32 +835,19 @@ for(ACDC& acdc: acdcs_)
                     if((acdc_data[0]&0xffffffffffffff00) == 0x123456789abcde00 && 
                        (acdc_data[1]&0xffff000000000000) == 0xac9c000000000000)
                     {
+                        std::cout << "Found header after flushing: " << i << "\n";
                         //we found a header, slurp up the rest of this event
                         eth_burst_.recieve_burst(1445-182);
                     }
                 }
             }
-            else if(consequentErrors >= 4) {cout << "Loop: " << evt 
-                << ", nEvtsMax_: " << nEvtsMax_ 
-                << ", running_: " << running_
-                << ", consequentErrors: " << consequentErrors 
-                << endl;
-            break;} 
+            else if(consequentErrors >= 4) return std::vector<std::vector<uint64_t>>{};
         }
 
-        
-        const auto& nEvtsMaxPtr = std::max_element(acdcs_.begin(), acdcs_.end(), [](const ACDC& a, const ACDC& b){return a.getNEvents() < b.getNEvents();});
-        if(nEvtsMaxPtr == acdcs_.end())
-        {
-            cout << "NO ACDC"<< endl;
-            //THROW ERROR HERE
-            break;
-        }
-        nEvtsMax_ = nEvtsMaxPtr->getNEvents();
-    }
-
+    // }
     return all_data;
 }
+
 /*------------------------------------------------------------------------------------*/
 /*---------------------------Read functions listening for data------------------------*/
 
@@ -866,19 +862,17 @@ int ACC::listenForAcdcData()
 //    sigfillset(&sa.sa_mask);
 //    sigaction(SIGINT,&sa,NULL);
 
-    int eventCounter = 0;
+   
     if(params_.triggerMode == 1)
     {
-    while(eventCounter<params_.eventNumber)
-    {
-        ++eventCounter;
+
+       
             softwareTrigger();
 
             //ensure we are past the 80 us PSEC read time
-            usleep(350);
+            // usleep(1000);
 
         }
-    }
 
     //endRun();
 
@@ -1006,39 +1000,39 @@ std::string ACC::versionCheck(bool debug)
 
 	     auto eAccBuffer = eth_.recieve_many(0x1100, 64+32);
 
-	    snprintf(buf, sizeof(buf), "  PLL lock status:\n    System PLL: %d\n    Serial PLL: %d\n    DPA PLL 1:  %d\n    DPA PLL 2:  %d\n", (AccBuffer[2] & 0x1)?1:0, (AccBuffer[2] & 0x2)?1:0, (AccBuffer[2] & 0x4)?1:0, (AccBuffer[2] & 0x8)?1:0);
+	    sprintf(buf, "  PLL lock status:\n    System PLL: %d\n    Serial PLL: %d\n    DPA PLL 1:  %d\n    DPA PLL 2:  %d\n", (AccBuffer[2] & 0x1)?1:0, (AccBuffer[2] & 0x2)?1:0, (AccBuffer[2] & 0x4)?1:0, (AccBuffer[2] & 0x8)?1:0);
         version += buf;
-	    snprintf(buf, sizeof(buf), "  %-30s %10s %10s %10s %10s %10s %10s %10s %10s\n", "", "ACDC0", "ACDC1", "ACDC2", "ACDC3", "ACDC4", "ACDC5", "ACDC6", "ACDC7");
+	    sprintf(buf, "  %-30s %10s %10s %10s %10s %10s %10s %10s %10s\n", "", "ACDC0", "ACDC1", "ACDC2", "ACDC3", "ACDC4", "ACDC5", "ACDC6", "ACDC7");
 	    version += buf;
-        snprintf(buf, sizeof(buf),"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link rx clk fail", (AccBuffer[16] & 0x1)?1:0, (AccBuffer[16] & 0x2)?1:0, (AccBuffer[16] & 0x4)?1:0, (AccBuffer[16] & 0x8)?1:0, (AccBuffer[16] & 0x10)?1:0, (AccBuffer[16] & 0x20)?1:0, (AccBuffer[16] & 0x40)?1:0, (AccBuffer[16] & 0x80)?1:0);
+        sprintf(buf,"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link rx clk fail", (AccBuffer[16] & 0x1)?1:0, (AccBuffer[16] & 0x2)?1:0, (AccBuffer[16] & 0x4)?1:0, (AccBuffer[16] & 0x8)?1:0, (AccBuffer[16] & 0x10)?1:0, (AccBuffer[16] & 0x20)?1:0, (AccBuffer[16] & 0x40)?1:0, (AccBuffer[16] & 0x80)?1:0);
 	    version += buf;
-        snprintf(buf, sizeof(buf),"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link align err", (AccBuffer[17] & 0x1)?1:0, (AccBuffer[17] & 0x2)?1:0, (AccBuffer[17] & 0x4)?1:0, (AccBuffer[17] & 0x8)?1:0, (AccBuffer[17] & 0x10)?1:0, (AccBuffer[17] & 0x20)?1:0, (AccBuffer[17] & 0x40)?1:0, (AccBuffer[17] & 0x80)?1:0);
+        sprintf(buf,"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link align err", (AccBuffer[17] & 0x1)?1:0, (AccBuffer[17] & 0x2)?1:0, (AccBuffer[17] & 0x4)?1:0, (AccBuffer[17] & 0x8)?1:0, (AccBuffer[17] & 0x10)?1:0, (AccBuffer[17] & 0x20)?1:0, (AccBuffer[17] & 0x40)?1:0, (AccBuffer[17] & 0x80)?1:0);
 	    version += buf;
-        snprintf(buf, sizeof(buf),"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link decode err", (AccBuffer[18] & 0x1)?1:0, (AccBuffer[18] & 0x2)?1:0, (AccBuffer[18] & 0x4)?1:0, (AccBuffer[18] & 0x8)?1:0, (AccBuffer[18] & 0x10)?1:0, (AccBuffer[18] & 0x20)?1:0, (AccBuffer[18] & 0x40)?1:0, (AccBuffer[18] & 0x80)?1:0);
+        sprintf(buf,"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link decode err", (AccBuffer[18] & 0x1)?1:0, (AccBuffer[18] & 0x2)?1:0, (AccBuffer[18] & 0x4)?1:0, (AccBuffer[18] & 0x8)?1:0, (AccBuffer[18] & 0x10)?1:0, (AccBuffer[18] & 0x20)?1:0, (AccBuffer[18] & 0x40)?1:0, (AccBuffer[18] & 0x80)?1:0);
 	    version += buf;
-        snprintf(buf, sizeof(buf),"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link disparity err", (AccBuffer[19] & 0x1)?1:0, (AccBuffer[19] & 0x2)?1:0, (AccBuffer[19] & 0x4)?1:0, (AccBuffer[19] & 0x8)?1:0, (AccBuffer[19] & 0x10)?1:0, (AccBuffer[19] & 0x20)?1:0, (AccBuffer[19] & 0x40)?1:0, (AccBuffer[19] & 0x80)?1:0);
+        sprintf(buf,"  %-30s %10d %10d %10d %10d %10d %10d %10d %10d\n", "40 MPBS link disparity err", (AccBuffer[19] & 0x1)?1:0, (AccBuffer[19] & 0x2)?1:0, (AccBuffer[19] & 0x4)?1:0, (AccBuffer[19] & 0x8)?1:0, (AccBuffer[19] & 0x10)?1:0, (AccBuffer[19] & 0x20)?1:0, (AccBuffer[19] & 0x40)?1:0, (AccBuffer[19] & 0x80)?1:0);
 	    version += buf;
-        snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "40 MPBS link Rx FIFO Occ", eAccBuffer[56], eAccBuffer[57], eAccBuffer[58], eAccBuffer[59], eAccBuffer[60], eAccBuffer[61], eAccBuffer[62], eAccBuffer[63]);
+        sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "40 MPBS link Rx FIFO Occ", eAccBuffer[56], eAccBuffer[57], eAccBuffer[58], eAccBuffer[59], eAccBuffer[60], eAccBuffer[61], eAccBuffer[62], eAccBuffer[63]);
 	    version += buf;
-        snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Byte FIFO 0 Occ", eAccBuffer[0], eAccBuffer[2], eAccBuffer[4], eAccBuffer[6], eAccBuffer[8], eAccBuffer[10], eAccBuffer[12], eAccBuffer[14]);
+        sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Byte FIFO 0 Occ", eAccBuffer[0], eAccBuffer[2], eAccBuffer[4], eAccBuffer[6], eAccBuffer[8], eAccBuffer[10], eAccBuffer[12], eAccBuffer[14]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Byte FIFO 1 Occ", eAccBuffer[1], eAccBuffer[3], eAccBuffer[5], eAccBuffer[7], eAccBuffer[9], eAccBuffer[11], eAccBuffer[13], eAccBuffer[15]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Byte FIFO 1 Occ", eAccBuffer[1], eAccBuffer[3], eAccBuffer[5], eAccBuffer[7], eAccBuffer[9], eAccBuffer[11], eAccBuffer[13], eAccBuffer[15]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS PRBS Err 0", eAccBuffer[16], eAccBuffer[18], eAccBuffer[20], eAccBuffer[22], eAccBuffer[24], eAccBuffer[26], eAccBuffer[28], eAccBuffer[30]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS PRBS Err 0", eAccBuffer[16], eAccBuffer[18], eAccBuffer[20], eAccBuffer[22], eAccBuffer[24], eAccBuffer[26], eAccBuffer[28], eAccBuffer[30]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS PRBS Err 1", eAccBuffer[17], eAccBuffer[19], eAccBuffer[21], eAccBuffer[23], eAccBuffer[25], eAccBuffer[27], eAccBuffer[29], eAccBuffer[31]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS PRBS Err 1", eAccBuffer[17], eAccBuffer[19], eAccBuffer[21], eAccBuffer[23], eAccBuffer[25], eAccBuffer[27], eAccBuffer[29], eAccBuffer[31]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Symbol Err 0", eAccBuffer[32], eAccBuffer[34], eAccBuffer[36], eAccBuffer[38], eAccBuffer[40], eAccBuffer[42], eAccBuffer[44], eAccBuffer[46]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Symbol Err 0", eAccBuffer[32], eAccBuffer[34], eAccBuffer[36], eAccBuffer[38], eAccBuffer[40], eAccBuffer[42], eAccBuffer[44], eAccBuffer[46]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Symbol Err 1", eAccBuffer[33], eAccBuffer[35], eAccBuffer[37], eAccBuffer[39], eAccBuffer[41], eAccBuffer[43], eAccBuffer[45], eAccBuffer[47]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS Symbol Err 1", eAccBuffer[33], eAccBuffer[35], eAccBuffer[37], eAccBuffer[39], eAccBuffer[41], eAccBuffer[43], eAccBuffer[45], eAccBuffer[47]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS parity Err 0", eAccBuffer[64], eAccBuffer[66], eAccBuffer[68], eAccBuffer[70], eAccBuffer[72], eAccBuffer[74], eAccBuffer[76], eAccBuffer[78]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS parity Err 0", eAccBuffer[64], eAccBuffer[66], eAccBuffer[68], eAccBuffer[70], eAccBuffer[72], eAccBuffer[74], eAccBuffer[76], eAccBuffer[78]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS parity Err 1", eAccBuffer[65], eAccBuffer[67], eAccBuffer[69], eAccBuffer[71], eAccBuffer[73], eAccBuffer[75], eAccBuffer[77], eAccBuffer[79]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MPBS parity Err 1", eAccBuffer[65], eAccBuffer[67], eAccBuffer[69], eAccBuffer[71], eAccBuffer[73], eAccBuffer[75], eAccBuffer[77], eAccBuffer[79]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MBPS FIFO Occ", eAccBuffer[48], eAccBuffer[49], eAccBuffer[50], eAccBuffer[51], eAccBuffer[52], eAccBuffer[53], eAccBuffer[54], eAccBuffer[55]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "250 MBPS FIFO Occ", eAccBuffer[48], eAccBuffer[49], eAccBuffer[50], eAccBuffer[51], eAccBuffer[52], eAccBuffer[53], eAccBuffer[54], eAccBuffer[55]);
 	    version += buf;
-	    snprintf(buf, sizeof(buf),"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "Self trig count", eAccBuffer[80], eAccBuffer[81], eAccBuffer[82], eAccBuffer[83], eAccBuffer[84], eAccBuffer[85], eAccBuffer[86], eAccBuffer[87]);
+	    sprintf(buf,"  %-30s %10lu %10lu %10lu %10lu %10lu %10lu %10lu %10lu\n", "Self trig count", eAccBuffer[80], eAccBuffer[81], eAccBuffer[82], eAccBuffer[83], eAccBuffer[84], eAccBuffer[85], eAccBuffer[86], eAccBuffer[87]);
 	    version += buf;
 	    //for(auto& val : lastAccBuffer) printf("%016lx\n", val);
 	    //for(unsigned int i = 0; i < lastAccBuffer.size(); ++i) printf("stuff: 11%02x: %10ld\n", i, lastAccBuffer[i]);
@@ -1065,11 +1059,18 @@ std::string ACC::versionCheck(bool debug)
     //Loop over the ACC buffer words that show the ACDC buffer size
     //32 words represent a connected ACDC
     for(int i = 0; i < MAX_NUM_BOARDS; i++)
-    {
+    {std::stringstream ss;
+
         uint64_t bufLen = eth_.recieve(0x1138+i);
+        
         if(bufLen > 5)
         {
             std::vector<uint64_t> buf = eth_.recieve_many(0x1200+i, bufLen, EthernetInterface::NO_ADDR_INC);
+            for (unsigned int j = 0; j < buf.size(); ++j)
+            {
+                ss << std::hex << buf.at(j) << " ";
+            }
+            
             ss << "Board " << i << " has the firmware version: " << std::hex << buf.at(2) << std::dec;
             ss << " from " << std::hex << ((buf.at(4) >> 8) & 0xff) << std::dec << "/" << std::hex << (buf.at(4) & 0xff) << std::dec << "/" << std::hex << buf.at(3) << std::dec << std::endl;
             std::string accVersion = ss.str();
@@ -1077,45 +1078,45 @@ std::string ACC::versionCheck(bool debug)
 	    if(debug)
 	    {
 
-        char buf[216];
-		snprintf(buf, sizeof(buf),"  Header/footer: %4lx %4lx %4lx %4lx (%s)\n", buf[0], buf[1], buf[30], buf[31], (buf[0] == 0x1234 && buf[1] == 0xbbbb && buf[30] == 0xbbbb && buf[31] == 0x4321)?"Correct":"Wrong");
-		version += buf;
-        snprintf(buf, sizeof(buf),"  PLL lock status:\n    ACC PLL:    %d\n    Serial PLL: %d\n    JC PLL:     %d\n    SYS PLL:    %d\n    WR PLL:     %d\n", (buf[6] & 0x4)?1:0, (buf[6] & 0x2)?1:0, (buf[6] & 0x200)?1:0, (buf[6] & 0x8)?1:0, (buf[6] & 0x1)?1:0);
-        version += buf;
-                snprintf(buf, sizeof(buf),"  FLL Locks:              %8lx\n", (buf[6] >> 4)&0x1f);
-                version += buf;
-                snprintf(buf, sizeof(buf),"  ACC 40 MHz:             %8.3f MHz\n", float(buf[7])/1000.0);
-                version += buf;
-                snprintf(buf, sizeof(buf),"  JCPLL 40 MHz:           %8.3f MHz\n", float(buf[8])/1000.0);
-                version += buf;
-		snprintf(buf, sizeof(buf),"  Backpressure:           %8d\n", (buf[5] & 0x2)?1:0);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  40 MBPS parity error:   %8d\n", (buf[5] & 0x1)?1:0);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  Event count:            %8lu\n", (buf[15] << 16) | buf[16]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  ID Frame count:         %8lu\n", (buf[17] << 16) | buf[18]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  Trigger count all:      %8lu\n", (buf[11] << 16) | buf[12]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  Trigger count accepted: %8lu\n", (buf[13] << 16) | buf[14]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  PSEC0 FIFO Occ:         %8lu\n", buf[21]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  PSEC1 FIFO Occ:         %8lu\n", buf[22]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  PSEC2 FIFO Occ:         %8lu\n", buf[23]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  PSEC3 FIFO Occ:         %8lu\n", buf[24]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  PSEC4 FIFO Occ:         %8lu\n", buf[25]);
-        version += buf;
-		snprintf(buf, sizeof(buf),"  Wr time FIFO Occ:       %8lu\n", buf[26]);
-		version += buf;
-		snprintf(buf, sizeof(buf),"  Sys time FIFO Occ:      %8lu\n", buf[27]);
-		version += buf;
-		snprintf(buf, sizeof(buf),"\n");
-		version += buf;
+        char buff[216];
+		sprintf(buff,"  Header/footer: %4lx %4lx %4lx %4lx (%s)\n", buf[0], buf[1], buf[30], buf[31], (buf[0] == 0x1234 && buf[1] == 0xbbbb && buf[30] == 0xbbbb && buf[31] == 0x4321)?"Correct":"Wrong");
+		version += buff;
+        sprintf(buff,"  PLL lock status:\n    ACC PLL:    %d\n    Serial PLL: %d\n    JC PLL:     %d\n    SYS PLL:    %d\n    WR PLL:     %d\n", (buf[6] & 0x4)?1:0, (buf[6] & 0x2)?1:0, (buf[6] & 0x200)?1:0, (buf[6] & 0x8)?1:0, (buf[6] & 0x1)?1:0);
+        version += buff;
+        sprintf(buff,"  FLL Locks:              %8lx\n", (buf[6] >> 4)&0x1f);
+        version += buff;
+        sprintf(buff,"  ACC 40 MHz:             %8.3f MHz\n", float(buf[7])/1000.0);
+        version += buff;
+        sprintf(buff,"  JCPLL 40 MHz:           %8.3f MHz\n", float(buf[8])/1000.0);
+        version += buff;
+		sprintf(buff,"  Backpressure:           %8d\n", (buf[5] & 0x2)?1:0);
+        version += buff;
+		sprintf(buff,"  40 MBPS parity error:   %8d\n", (buf[5] & 0x1)?1:0);
+        version += buff;
+		sprintf(buff,"  Event count:            %8lu\n", (buf[15] << 16) | buf[16]);
+        version += buff;
+		sprintf(buff,"  ID Frame count:         %8lu\n", (buf[17] << 16) | buf[18]);
+        version += buff;
+		sprintf(buff,"  Trigger count all:      %8lu\n", (buf[11] << 16) | buf[12]);
+        version += buff;
+		sprintf(buff,"  Trigger count accepted: %8lu\n", (buf[13] << 16) | buf[14]);
+        version += buff;
+		sprintf(buff,"  PSEC0 FIFO Occ:         %8lu\n", buf[21]);
+        version += buff;
+		sprintf(buff,"  PSEC1 FIFO Occ:         %8lu\n", buf[22]);
+        version += buff;
+		sprintf(buff,"  PSEC2 FIFO Occ:         %8lu\n", buf[23]);
+        version += buff;
+		sprintf(buff,"  PSEC3 FIFO Occ:         %8lu\n", buf[24]);
+        version += buff;
+		sprintf(buff,"  PSEC4 FIFO Occ:         %8lu\n", buf[25]);
+        version += buff;
+		sprintf(buff,"  Wr time FIFO Occ:       %8lu\n", buf[26]);
+		version += buff;
+		sprintf(buff,"  Sys time FIFO Occ:      %8lu\n", buf[27]);
+		version += buff;
+		sprintf(buff,"\n");
+		version += buff;
 
                 std::vector<std::vector<uint64_t>> bufs;
                 for(int j = 0; j < 5; ++j)
@@ -1130,24 +1131,24 @@ std::string ACC::versionCheck(bool debug)
                         bufs.push_back(eth_.recieve_many(0x1200+i, bufLen, EthernetInterface::NO_ADDR_INC));
                     }
                 }
-                snprintf(buf, sizeof(buf),"    PSEC4:                      %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][16], bufs[1][16], bufs[2][16], bufs[3][16], bufs[4][16]); 
-                version += buf;
-                snprintf(buf, sizeof(buf),"    RO Feedback count:          %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][3], bufs[1][3], bufs[2][3], bufs[3][3], bufs[4][3]); 
-                version += buf;
-                snprintf(buf, sizeof(buf),"    RO Feedback target:         %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][4], bufs[1][4], bufs[2][4], bufs[3][4], bufs[4][4]);
-                version += buf;
-                snprintf(buf, sizeof(buf),"    pro Vdd:                    %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][7], bufs[1][7], bufs[2][7], bufs[3][7], bufs[4][7]); 
-                version += buf;
-                snprintf(buf, sizeof(buf),"    Vbias:                      %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][5], bufs[1][5], bufs[2][5], bufs[3][5], bufs[4][5]);
-                version += buf;
-                snprintf(buf, sizeof(buf),"    Self trigger threshold 0:   %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][6], bufs[1][6], bufs[2][6], bufs[3][6], bufs[4][6]); 
-                version += buf;
-                snprintf(buf, sizeof(buf),"    vcdl count:                 %8ld  %8ld  %8ld  %8ld  %8ld\n", (bufs[0][14] << 16) | bufs[0][13], (bufs[1][14] << 16) | bufs[1][13], (bufs[2][14] << 16) | bufs[2][13], (bufs[3][14] << 16) | bufs[3][13], (bufs[4][14] << 16) | bufs[4][13]); 
-                version += buf;
-                snprintf(buf, sizeof(buf),"    DLL Vdd:                    %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][15], bufs[1][15], bufs[2][15], bufs[3][15], bufs[4][15]); 
-                version += buf;
-                snprintf(buf, sizeof(buf),"\n");
-                version += buf;
+                sprintf(buff,"    PSEC4:                      %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][16], bufs[1][16], bufs[2][16], bufs[3][16], bufs[4][16]); 
+                version += buff;
+                sprintf(buff,"    RO Feedback count:          %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][3], bufs[1][3], bufs[2][3], bufs[3][3], bufs[4][3]); 
+                version += buff;
+                sprintf(buff,"    RO Feedback target:         %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][4], bufs[1][4], bufs[2][4], bufs[3][4], bufs[4][4]);
+                version += buff;
+                sprintf(buff,"    pro Vdd:                    %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][7], bufs[1][7], bufs[2][7], bufs[3][7], bufs[4][7]); 
+                version += buff;
+                sprintf(buff,"    Vbias:                      %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][5], bufs[1][5], bufs[2][5], bufs[3][5], bufs[4][5]);
+                version += buff;
+                sprintf(buff,"    Self trigger threshold 0:   %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][6], bufs[1][6], bufs[2][6], bufs[3][6], bufs[4][6]); 
+                version += buff;
+                sprintf(buff,"    vcdl count:                 %8ld  %8ld  %8ld  %8ld  %8ld\n", (bufs[0][14] << 16) | bufs[0][13], (bufs[1][14] << 16) | bufs[1][13], (bufs[2][14] << 16) | bufs[2][13], (bufs[3][14] << 16) | bufs[3][13], (bufs[4][14] << 16) | bufs[4][13]); 
+                version += buff;
+                sprintf(buff,"    DLL Vdd:                    %8ld  %8ld  %8ld  %8ld  %8ld\n", bufs[0][15], bufs[1][15], bufs[2][15], bufs[3][15], bufs[4][15]); 
+                version += buff;
+                sprintf(buff,"\n");
+                version += buff;
 
             }
                 //printf("bufLen: %ld\n", bufLen);

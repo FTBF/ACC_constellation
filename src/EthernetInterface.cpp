@@ -251,6 +251,14 @@ std::vector<uint64_t> EthernetInterface::recieve_burst(int numwords, int timeout
     int wordsRead = 0;
     buff_[0] = 0;
     
+// try catch 
+// catch -> rethrow the exception 
+//  rethrow
+// catch it again in transmitter
+// make log message
+// std::exception
+
+
     while(wordsRead < numwords)
     {
         // read response ///////////////////////////////////////////////////////////
@@ -291,11 +299,13 @@ std::vector<uint64_t> EthernetInterface::recieve_burst(int numwords, int timeout
         {
             printf("Burst Read Timeout\n");
             exit(1);
+            throw std::runtime_error("BURST READ TIMEOUT");
         }
         else
         {
             perror("select()");
             exit(1);
+            throw std::runtime_error("BURST READ TIMEOUT");
         }
     }
 

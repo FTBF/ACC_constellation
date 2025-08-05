@@ -30,8 +30,11 @@ public:
     void running(const std::stop_token& stop_token);
     void stopping();
     void landing(std::string_view run_identifier);
+    std::string checkVersion();
 
 private:
-    ACC acc_;
+    std::unique_ptr<ACC> acc_;
+    // Reset acc class
+    std::size_t hwm_reached_ {};
 
 };

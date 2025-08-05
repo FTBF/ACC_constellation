@@ -20,6 +20,8 @@ using namespace std;
 #define NUM_CH 30 //maximum number of channels for one ACDC board
 #define MAX_NUM_BOARDS 8 // maxiumum number of ACDC boards connectable to one ACC 
 
+using namespace std;
+
 class ACC
 {
 public:
@@ -62,11 +64,14 @@ public:
 
 	/*ID 16: Used to dis/enable transfer data from the PSEC chips to the buffers*/
 	void enableTransfer(int onoff=0); 
+	
+	// parsing configuration and create ACDC objects 
+	int initializeConfig(const constellation::config::Configuration& config);
 
 	/*ID 17: Main init function that controls generalk setup as well as trigger settings*/
     // int initializeForDataReadout(const YAML::Node& config, const string& timestamp = "");
-	int initializeForDataReadout(const constellation::config::Configuration& config, const std::string& timestamp = "");
-
+	int initializeForDataReadout(const std::string& timestamp = "");
+	void initializeFile(const string& timestamp = "");
 	/*ID 18: Tells ACDCs to clear their ram.*/ 	
 	void dumpData(unsigned int boardMask); 
 
@@ -88,7 +93,7 @@ public:
 	void usbWakeup(); 
 
 	/*ID 24: Special function to check connected ACDCs for their firmware version*/ 
-	void versionCheck(bool debug = false);
+	std::string versionCheck(bool debug = false);
 
 	/*ID 25: Scan possible high speed link clock phases and select the optimal phase setting*/ 
 	void scanLinkPhase(unsigned int boardMask, bool print = false);
@@ -98,6 +103,7 @@ public:
 
     /*ID 27: Turn off triggers and data transfer off */
     void startRun();
+	void startRun_R();
     void stopRun();
     void endRun();
     void resetLinks();
@@ -107,17 +113,18 @@ public:
 
     void startDAQThread();
     void joinDAQThread();
-
+	
+	std::vector<std::vector<uint64_t>> transmitData();
 	/*------------------------------------------------------------------------------------*/
 	/*--------------------------------------Write functions-------------------------------*/
 	void writeErrorLog(string errorMsg); //writes an errorlog with timestamps for debugging
-        
+    bool running_;
 
     class ConfigParams
     {
     public:
         ConfigParams();
-
+		
         std::string ip;
         bool rawMode;
         int eventNumber;
@@ -148,7 +155,6 @@ private:
 	static void got_signal(int);
     void sendJCPLLSPIWord(unsigned int word, unsigned int boardMask = 0xff, bool verbose = false);
     void writeThread();
-    void transmitData();
     bool runWriteThread_;
 };
 

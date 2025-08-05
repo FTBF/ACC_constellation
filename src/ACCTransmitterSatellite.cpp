@@ -27,42 +27,52 @@
 using namespace constellation::config;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace constellation::protocol::CSCP;
 
 
 
 ACCTransmitterSatellite::ACCTransmitterSatellite(std::string_view type, std::string_view name)
     : TransmitterSatellite(type, name)
-{ support_reconfigure();
-    // acc_.setName(name);
-    // acc_.setType(type);
+{   register_command("checkVersion",
+                     "Command to check connected ACDCs for their firmware version",
+                     {State::NEW, State::INIT, State::ORBIT},
+                     &ACCTransmitterSatellite::checkVersion,
+                     this);
+    support_reconfigure();
 }
+
+
+
+
+std::string ACCTransmitterSatellite::checkVersion()
+{
+    return acc_->versionCheck(true);
+}
+
 
 void ACCTransmitterSatellite::initializing(constellation::config::Configuration& config)
 {
+    LOG(INFO)<<"Initializing ACC Transmitter Satellite";
+    acc_.reset(new ACC());
+    acc_->initializeConfig(config);
+
 }
 
 void ACCTransmitterSatellite::launching(){
-    LOG(INFO)<<"Launching";
-    LOG(INFO)<<"Get Status";
+LOG(INFO)<<"Launching";
+LOG(INFO)<<"Get Status";
     submit_status(std::string(getStatus()));
-// acc_.createAcdcs();
-// acc_.whichAcdcsConnected();
-// acc_.setHardwareTrigSrc(1, 0xff); 
-// acc_.toggleCal(1, 0x7FFF, 0xff);
-// setPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc); 
-// acc_.setPedestals(0x7FFF, 0xff, 0xff);
-    LOG(INFO)<<"VDD_DLL setting";
-    vector<uint32_t> vdd_dll_vec(5, 0x1f);
-    acc_.setVddDLL(vdd_dll_vec, true);
+    acc_->initializeForDataReadout("");
+
 
 }
 
 void ACCTransmitterSatellite::reconfiguring(const constellation::config::Configuration& partial_config)
 {
     LOG(INFO)<<"Reconfiguring";
-    acc_.parseConfig(partial_config);
+    // acc_->parseConfig(partial_config);
     LOG(INFO)<<"Reinitializing for run";
-    acc_.initializeForDataReadout(partial_config, "");
+    acc_->initializeConfig(partial_config);
 
 }
 
@@ -70,33 +80,45 @@ void ACCTransmitterSatellite::starting(std::string_view run_identifier)
 {
     // write new method for data transmission
     LOG(INFO)<<"Starting DAQ thread"<< run_identifier;
-    acc_.startRun();
+    hwm_reached_ = 0;
+    acc_->startRun();
+
     
-    //acc_.startDAQThread();
+    //acc_->startDAQThread();
 }
 
 void ACCTransmitterSatellite::running(const std::stop_token& stop_token)
 {
-    LOG(INFO)<<"Running, Listening Data";
-    acc_.listenForAcdcData();
+
     while(!stop_token.stop_requested()) {
-        // Do work
-        if(stop_token.stop_requested()) {
-            // Handle stop request
-            LOG(INFO)<<"Ending Run";
-            acc_.stopRun();
-            break;
+
+        LOG(INFO)<<"Running, Listening Data";
+        acc_->listenForAcdcData();
+        std::vector<std::vector<uint64_t>> acdc_data = acc_->transmitData();
+        auto msg = newDataMessage(acdc_data.size());
+        for(const auto& frame : acdc_data) {
+            // Copy vector to frame
+            msg.addFrame(std::vector{frame});
+        }
+
+        const auto success = trySendDataMessage(msg);
+        if(!success) {
+            // receiver overloaded or not connected?
+            ++hwm_reached_;
+            LOG_N(WARNING, 5) << "Could not send message, skipping...";
         }
     }
+
 }
 
 
 void ACCTransmitterSatellite::stopping()
 {
-    //acc_.joinDAQThread();
-
+    //acc_->joinDAQThread();
+    LOG_IF(WARNING, hwm_reached_ > 0) << "Could not send " << hwm_reached_ << " messages";
     LOG(INFO)<<"Stopping";
-    acc_.endRun();
+    acc_->running_ = false;
+    acc_->endRun();
     LOG(INFO)<<"Stopped";
     
 }
